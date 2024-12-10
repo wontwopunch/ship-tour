@@ -1,0 +1,145 @@
+<%- include('layouts/navbar') %>
+<div class="container">
+  <h1>월별 좌석 현황</h1>
+
+  <!-- 필터링 옵션 -->
+  <div class="filters">
+    <label for="monthSelect">월 선택:</label>
+    <select id="monthSelect" onchange="applyFilters()">
+      <% for (let i = 1; i <= 12; i++) { %>
+        <option value="<%= i %>" <%= currentMonth == i ? 'selected' : '' %>><%= i %>월</option>
+      <% } %>
+    </select>
+  </div>
+
+  <!-- 테이블 -->
+  <div class="table-container">
+    <table border="1">
+      <thead>
+        <tr>
+          <th>날짜</th>
+          <th colspan="9">포항출항</th>
+          <th colspan="9">울릉출항</th>
+        </tr>
+        <tr>
+          <th>월/일/요일</th>
+          <th>예약 이코</th>
+          <th>예약 비즈</th>
+          <th>예약 퍼스</th>
+          <th>블럭 이코</th>
+          <th>블럭 비즈</th>
+          <th>블럭 퍼스</th>
+          <th>잔여 이코</th>
+          <th>잔여 비즈</th>
+          <th>잔여 퍼스</th>
+          <th>예약 이코</th>
+          <th>예약 비즈</th>
+          <th>예약 퍼스</th>
+          <th>블럭 이코</th>
+          <th>블럭 비즈</th>
+          <th>블럭 퍼스</th>
+          <th>잔여 이코</th>
+          <th>잔여 비즈</th>
+          <th>잔여 퍼스</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% data.forEach(row => { %>
+          <tr>
+            <!-- 날짜 -->
+            <td>
+              <%= row.date %> 
+              (<%= ['일', '월', '화', '수', '목', '금', '토'][new Date(row.date).getDay()] %>)
+            </td>
+            <!-- 포항출항 -->
+            <td><%= row.departure.economy || 0 %></td>
+            <td><%= row.departure.business || 0 %></td>
+            <td><%= row.departure.first || 0 %></td>
+            <td><%= row.departure.ecoBlock || 0 %></td>
+            <td><%= row.departure.bizBlock || 0 %></td>
+            <td><%= row.departure.firstBlock || 0 %></td>
+            <td><%= (row.departure.ecoBlock || 0) - (row.departure.economy || 0) %></td>
+            <td><%= (row.departure.bizBlock || 0) - (row.departure.business || 0) %></td>
+            <td><%= (row.departure.firstBlock || 0) - (row.departure.first || 0) %></td>
+            <!-- 울릉출항 -->
+            <td><%= row.arrival.economy || 0 %></td>
+            <td><%= row.arrival.business || 0 %></td>
+            <td><%= row.arrival.first || 0 %></td>
+            <td><%= row.arrival.ecoBlock || 0 %></td>
+            <td><%= row.arrival.bizBlock || 0 %></td>
+            <td><%= row.arrival.firstBlock || 0 %></td>
+            <td><%= (row.arrival.ecoBlock || 0) - (row.arrival.economy || 0) %></td>
+            <td><%= (row.arrival.bizBlock || 0) - (row.arrival.business || 0) %></td>
+            <td><%= (row.arrival.firstBlock || 0) - (row.arrival.first || 0) %></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <button onclick="downloadExcel()">엑셀 다운로드</button>
+</div>
+
+<script>
+  // 필터 적용 함수
+  function applyFilters() {
+  const month = document.getElementById('monthSelect').value;
+  window.location.href = `/status/monthly?month=${month}`;
+}
+
+  function downloadExcel() {
+    const month = document.getElementById('monthSelect').value;
+    window.location.href = `/status/monthly/export?month=${month}`;
+  }
+</script>
+
+<style>
+  .filters {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+  }
+
+  .table-container {
+    margin-top: 20px;
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+  }
+
+  table th {
+    background-color: #007bff;
+    color: white;
+    padding: 10px;
+  }
+
+  table td {
+    padding: 8px;
+  }
+
+  table tr:nth-child(even) {
+    background-color: #f2f2f2;
+  }
+
+  table tr:hover {
+    background-color: #eef;
+  }
+
+  button {
+    margin-top: 20px;
+    padding: 10px 15px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  button:hover {
+    background-color: #218838;
+  }
+</style>

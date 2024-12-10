@@ -1,0 +1,331 @@
+<%- include('layouts/navbar') %>
+<div class="container">
+  <h1>월별 예약 관리</h1>
+
+  <!-- 버튼 섹션 -->
+  <div class="button-container">
+    <button onclick="addRow()">행 추가</button>
+    <button onclick="exportToExcel()">엑셀 저장</button>
+    <button onclick="saveChanges()">저장</button>
+  </div>
+
+  <!-- 월별 필터링 -->
+  <label for="monthFilter">월 선택:</label>
+  <select id="monthFilter" onchange="filterByMonth()">
+    <option value="all">전체</option>
+    <% for (let i = 1; i <= 12; i++) { %>
+      <option value="<%= i %>" <%= selectedMonth == i ? 'selected' : '' %>><%= i %>월</option>
+    <% } %>
+  </select>
+
+  <!-- 예약 테이블 -->
+  <table border="1" id="reservationTable">
+    <thead>
+      <tr>
+        <th>선박명</th>
+        <th>명단</th>
+        <th>계약일</th>
+        <th>출항일</th>
+        <th>입항일</th>
+        <th>예약자명</th>
+        <th>예약자명2</th>
+        <th>연락처</th>
+        <th>상품</th>
+        <th>총 좌석</th>
+        <th>이코노미</th>
+        <th>비즈니스</th>
+        <th>퍼스트</th>
+        <th>독도 관광 날짜</th>
+        <th>독도 관광 인원</th>
+        <th>독도 관광 시간</th>
+        <th>상품내용</th>
+        <th>총금액</th>
+        <th>계약금</th>
+        <th>잔금</th>
+        <th>렌터카</th>
+        <th>숙박</th>
+        <th>기타</th>
+        <th>출항비</th>
+        <th>입항비</th>
+        <th>독도비</th>
+        <th>식당비</th>
+        <th>행사비</th>
+        <th>기타비</th>
+        <th>환불</th>
+        <th>총 정산비</th>
+        <th>수익</th>
+        <th>삭제</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% reservations.forEach(reservation => { %>
+        <tr data-id="<%= reservation._id %>">
+          <td>
+            <select data-field="ship">
+              <option value="" disabled>선박 선택</option>
+              <% ships.forEach(ship => { %>
+                <option value="<%= ship._id %>" <%= reservation.ship._id == ship._id ? 'selected' : '' %>><%= ship.name %></option>
+              <% }) %>
+            </select>
+          </td>
+          <td contenteditable="true" data-field="listStatus"><%= reservation.listStatus || '' %></td>
+          <td><input type="date" value="<%= reservation.contractDate ? reservation.contractDate.toISOString().split('T')[0] : '' %>" data-field="contractDate"></td>
+          <td><input type="date" value="<%= reservation.departureDate ? reservation.departureDate.toISOString().split('T')[0] : '' %>" data-field="departureDate"></td>
+          <td><input type="date" value="<%= reservation.arrivalDate ? reservation.arrivalDate.toISOString().split('T')[0] : '' %>" data-field="arrivalDate"></td>
+          <td contenteditable="true" data-field="reservedBy"><%= reservation.reservedBy || '' %></td>
+          <td contenteditable="true" data-field="reservedBy2"><%= reservation.reservedBy2 || '' %></td>
+          <td contenteditable="true" data-field="contact"><%= reservation.contact || '' %></td>
+          <td contenteditable="true" data-field="product"><%= reservation.product || '' %></td>
+          <td contenteditable="true" data-field="totalSeats"><%= reservation.totalSeats || 0 %></td>
+          <td contenteditable="true" data-field="economySeats"><%= reservation.economySeats || 0 %></td>
+          <td contenteditable="true" data-field="businessSeats"><%= reservation.businessSeats || 0 %></td>
+          <td contenteditable="true" data-field="firstSeats"><%= reservation.firstSeats || 0 %></td>
+          <td><input type="date" value="<%= reservation.dokdoTourDate ? reservation.dokdoTourDate.toISOString().split('T')[0] : '' %>" data-field="dokdoTourDate"></td>
+          <td contenteditable="true" data-field="dokdoTourPeople"><%= reservation.dokdoTourPeople || 0 %></td>
+          <td contenteditable="true" data-field="dokdoTourTime"><%= reservation.dokdoTourTime || '' %></td>
+          <td contenteditable="true" data-field="dokdoTourDetails"><%= reservation.dokdoTourDetails || '' %></td>
+          <td contenteditable="true" data-field="totalPrice"><%= reservation.totalPrice || 0 %></td>
+          <td contenteditable="true" data-field="deposit"><%= reservation.deposit || 0 %></td>
+          <td contenteditable="true" data-field="balance"><%= reservation.balance || 0 %></td>
+          <td contenteditable="true" data-field="rentalCar"><%= reservation.rentalCar || '' %></td>
+          <td contenteditable="true" data-field="accommodation"><%= reservation.accommodation || '' %></td>
+          <td contenteditable="true" data-field="others"><%= reservation.others || '' %></td>
+          <td contenteditable="true" data-field="departureFee"><%= reservation.departureFee || 0 %></td>
+          <td contenteditable="true" data-field="arrivalFee"><%= reservation.arrivalFee || 0 %></td>
+          <td contenteditable="true" data-field="dokdoFee"><%= reservation.dokdoFee || 0 %></td>
+          <td contenteditable="true" data-field="restaurantFee"><%= reservation.restaurantFee || 0 %></td>
+          <td contenteditable="true" data-field="eventFee"><%= reservation.eventFee || 0 %></td>
+          <td contenteditable="true" data-field="otherFee"><%= reservation.otherFee || 0 %></td>
+          <td contenteditable="true" data-field="refund"><%= reservation.refund || 0 %></td>
+          <td contenteditable="true" data-field="totalSettlement"><%= reservation.totalSettlement || 0 %></td>
+          <td contenteditable="true" data-field="profit"><%= reservation.profit || 0 %></td>
+          <td><button onclick="deleteRow('<%= reservation._id %>')">삭제</button></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<script>
+function saveChanges() {
+  const rows = document.querySelectorAll('#reservationTable tbody tr');
+  const updatedData = [];
+  const newData = [];
+
+  rows.forEach((row) => {
+    const id = row.getAttribute('data-id');
+    const rowData = [...row.cells].reduce((acc, cell, index) => {
+      const headers = [
+        'ship', 'listStatus', 'contractDate', 'departureDate', 'arrivalDate',
+        'reservedBy', 'reservedBy2', 'contact', 'product', 'totalSeats',
+        'economySeats', 'businessSeats', 'firstSeats', 'dokdoTourDate',
+        'dokdoTourPeople', 'dokdoTourTime', 'dokdoTourDetails', 'totalPrice',
+        'deposit', 'balance', 'rentalCar', 'accommodation', 'others',
+        'departureFee', 'arrivalFee', 'dokdoFee', 'restaurantFee',
+        'eventFee', 'otherFee', 'refund', 'totalSettlement', 'profit',
+      ];
+      if (index < headers.length) {
+        const inputField = cell.querySelector('input, select');
+        acc[headers[index]] = inputField ? inputField.value : cell.innerText.trim();
+      }
+      return acc;
+    }, {});
+
+    if (id) {
+      // Update existing data
+      rowData._id = id;
+      updatedData.push(rowData);
+    } else {
+      // Add new data
+      newData.push(rowData);
+    }
+  });
+
+  // Update existing data
+  if (updatedData.length > 0) {
+    fetch('/reservation/bulk-update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedData),
+    }).then((response) => {
+      if (response.ok) console.log('업데이트 완료');
+      else console.error('업데이트 실패');
+    });
+  }
+
+  // Add new data
+  if (newData.length > 0) {
+    fetch('/reservation/add-bulk', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newData),
+    })
+      .then((response) => response.json())
+      .then((result) => {
+        if (result.success) {
+          alert('새로운 데이터가 추가되었습니다.');
+          location.reload(); // Reload to reflect the new data
+        } else {
+          console.error('데이터 추가 실패');
+        }
+      })
+      .catch((error) => console.error('데이터 추가 중 오류:', error));
+  }
+}
+
+    
+    function filterByMonth() {
+      const month = document.getElementById('monthFilter').value;
+      window.location.href = `/reservation/monthly?month=${month}`;
+    }
+    
+    function addRow() {
+      const table = document.getElementById('reservationTable').getElementsByTagName('tbody')[0];
+      const newRow = table.insertRow(0);
+    
+      // 서버에서 전달된 ships 데이터를 사용하여 드롭다운 생성
+      const shipOptions = `
+        <% ships.forEach(ship => { %>
+          <option value="<%= ship._id %>"><%= ship.name %></option>
+        <% }) %>
+      `;
+    
+      newRow.innerHTML = `
+        <td>
+          <select data-field="ship">
+            <option value="" disabled selected>선박 선택</option>
+            ${shipOptions}
+          </select>
+        </td>
+        <td contenteditable="true"></td>
+        <td><input type="date" data-field="contractDate" value="${new Date().toISOString().split('T')[0]}"></td>
+        <td><input type="date" data-field="departureDate" value="${new Date().toISOString().split('T')[0]}"></td>
+        <td><input type="date" data-field="arrivalDate" value="${new Date().toISOString().split('T')[0]}"></td>
+        <td contenteditable="true"></td>
+        <td contenteditable="true"></td>
+        <td contenteditable="true"></td>
+        <td contenteditable="true"></td>
+        <td contenteditable="true">0</td>
+        <td contenteditable="true">0</td>
+        <td contenteditable="true">0</td>
+        <td contenteditable="true">0</td>
+        <td><input type="date" data-field="dokdoTourDate"></td>
+        <td contenteditable="true">0</td>
+        <td contenteditable="true"></td>
+        <td contenteditable="true"></td>
+        <td contenteditable="true">0</td>
+        <td contenteditable="true">0</td>
+        <td contenteditable="true">0</td>
+        <td contenteditable="true"></td>
+        <td contenteditable="true"></td>
+        <td contenteditable="true"></td>
+        <td contenteditable="true">0</td>
+        <td contenteditable="true">0</td>
+        <td contenteditable="true">0</td>
+        <td contenteditable="true">0</td>
+        <td contenteditable="true">0</td>
+        <td contenteditable="true">0</td>
+        <td contenteditable="true">0</td>
+        <td contenteditable="true">0</td>
+        <td contenteditable="true">0</td>
+        <td><button onclick="deleteRow(null)">삭제</button></td>
+      `;
+    }
+    
+    function deleteRow(id) {
+      if (!confirm('이 행을 삭제하시겠습니까?')) return;
+    
+      if (id) {
+        fetch(`/reservation/delete/${id}`, { method: 'DELETE' })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) location.reload();
+          });
+      } else {
+        event.target.closest('tr').remove();
+      }
+    }
+    
+    document.getElementById('reservationTable').addEventListener('input', (e) => {
+      const row = e.target.closest('tr');
+      const id = row.getAttribute('data-id');
+    
+      if (!id) return;
+    
+      const updatedData = [...row.cells].reduce((acc, cell, index) => {
+        const headers = [
+          'ship', 'listStatus', 'contractDate', 'departureDate', 'arrivalDate',
+          'reservedBy', 'reservedBy2', 'contact', 'product', 'totalSeats',
+          'economySeats', 'businessSeats', 'firstSeats', 'dokdoTourDate',
+          'dokdoTourPeople', 'dokdoTourTime', 'dokdoTourDetails', 'totalPrice',
+          'deposit', 'balance', 'rentalCar', 'accommodation', 'others',
+          'departureFee', 'arrivalFee', 'dokdoFee', 'restaurantFee',
+          'eventFee', 'otherFee', 'refund', 'totalSettlement', 'profit',
+        ];
+        if (index < headers.length) acc[headers[index]] = cell.innerText.trim();
+        return acc;
+      }, {});
+    
+      fetch(`/reservation/update/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedData),
+      });
+    });
+    
+    function exportToExcel() {
+      window.location.href = '/reservation/export';
+    }
+    </script>
+
+<style>
+    .button-container {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    
+    .button-container button {
+      padding: 10px 15px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    
+    .button-container button:hover {
+      background-color: #0056b3;
+    }
+    
+    .table-container {
+      overflow-x: auto; /* 가로 스크롤 허용 */
+      margin-top: 20px;
+    }
+    
+    table {
+      width: max-content; /* 테이블이 내용에 맞게 확장됨 */
+      border-collapse: collapse;
+      margin: 0 auto;
+    }
+    
+    table th, table td {
+      padding: 10px;
+      text-align: center;
+      white-space: nowrap; /* 텍스트 줄바꿈 방지 */
+    }
+    
+    table th {
+      background-color: #007bff;
+      color: white;
+    }
+    
+    table tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+    
+    table tr:hover {
+      background-color: #e6f7ff;
+    }
+    </style>
+    

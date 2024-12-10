@@ -1,0 +1,51 @@
+<%- include('layouts/navbar') %>
+
+<div class="container">
+  <h1>환영합니다!</h1>
+  <p>선박 관리 시스템에 로그인되었습니다.</p>
+
+  <div class="menu">
+    <a href="/ship">
+      <button>선박 관리</button>
+    </a>
+    <a href="/reservation/monthly">
+      <button>월별 예약 관리</button>
+    </a>
+    <a href="/status/monthly">
+      <button>월별 현황</button>
+    </a>
+    <a href="/auth/logout">
+      <button>로그아웃</button>
+    </a>
+  </div>
+</div>
+
+<style>
+  .container {
+    text-align: center;
+    margin-top: 50px;
+  }
+
+  .menu {
+    margin-top: 30px;
+  }
+
+  .menu a {
+    margin: 10px;
+  }
+
+  .menu button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+
+  .menu button:hover {
+    background-color: #0056b3;
+  }
+</style>

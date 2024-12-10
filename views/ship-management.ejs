@@ -1,0 +1,192 @@
+<%- include('layouts/navbar') %>
+
+<div class="container">
+  <h1>선박 관리</h1>
+
+  <!-- 선박 추가 폼 -->
+  <form action="/ship/add" method="POST" class="ship-form">
+    <input type="text" name="name" placeholder="선박명" required>
+    <input type="number" name="eco" placeholder="이코노미 좌석" min="0">
+    <input type="number" name="biz" placeholder="비즈니스 좌석" min="0">
+    <input type="number" name="first" placeholder="퍼스트 좌석" min="0">
+    <button type="submit">추가</button>
+  </form>
+
+  <!-- 선박 리스트 -->
+  <table border="1" id="shipTable">
+    <thead>
+      <tr>
+        <th>선박명</th>
+        <th>이코노미 좌석</th>
+        <th>비즈니스 좌석</th>
+        <th>퍼스트 좌석</th>
+        <th>총 좌석</th>
+        <th>수정</th>
+        <th>삭제</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% ships.forEach(ship => { %>
+        <tr data-id="<%= ship._id %>">
+          <td contenteditable="true" data-field="name"><%= ship.name %></td>
+          <td contenteditable="true" data-field="eco"><%= ship.eco %></td>
+          <td contenteditable="true" data-field="biz"><%= ship.biz %></td>
+          <td contenteditable="true" data-field="first"><%= ship.first %></td>
+          <td><%= ship.total %></td>
+          <td>
+            <button class="update-btn">수정</button>
+          </td>
+          <td>
+            <button class="delete-btn">삭제</button>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<script>
+  // 수정 버튼 클릭 처리
+  document.querySelectorAll('.update-btn').forEach(button => {
+    button.addEventListener('click', async (event) => {
+      const row = event.target.closest('tr');
+      const id = row.getAttribute('data-id');
+
+      const updatedData = Array.from(row.querySelectorAll('[contenteditable]')).reduce((acc, cell) => {
+        const field = cell.getAttribute('data-field');
+        acc[field] = cell.innerText.trim();
+        return acc;
+      }, {});
+
+      try {
+        const response = await fetch(`/ship/update/${id}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updatedData),
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          alert('수정되었습니다.');
+          location.reload(); // 새로고침으로 변경사항 반영
+        } else {
+          alert('수정 실패: ' + result.message);
+        }
+      } catch (error) {
+        console.error('Error updating ship:', error);
+      }
+    });
+  });
+
+  // 삭제 버튼 클릭 처리
+  document.querySelectorAll('.delete-btn').forEach(button => {
+    button.addEventListener('click', async (event) => {
+      if (!confirm('이 선박을 삭제하시겠습니까?')) return;
+
+      const row = event.target.closest('tr');
+      const id = row.getAttribute('data-id');
+
+      try {
+        const response = await fetch(`/ship/delete/${id}`, {
+          method: 'DELETE',
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          alert('삭제되었습니다.');
+          row.remove();
+        } else {
+          alert('삭제 실패: ' + result.message);
+        }
+      } catch (error) {
+        console.error('Error deleting ship:', error);
+      }
+    });
+  });
+</script>
+
+
+<style>
+  .container {
+    margin: 20px;
+  }
+
+  h1 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .ship-form {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .ship-form input {
+    padding: 5px;
+    font-size: 14px;
+  }
+
+  .ship-form button {
+    padding: 5px 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    border-radius: 5px;
+  }
+
+  .ship-form button:hover {
+    background-color: #0056b3;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 auto;
+  }
+
+  table th, table td {
+    padding: 10px;
+    text-align: center;
+  }
+
+  table th {
+    background-color: #007bff;
+    color: white;
+  }
+
+  table tr:nth-child(even) {
+    background-color: #f2f2f2;
+  }
+
+  .update-btn, .delete-btn {
+    padding: 5px 10px;
+    font-size: 12px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+
+  .update-btn {
+    background-color: #28a745;
+    color: white;
+  }
+
+  .update-btn:hover {
+    background-color: #218838;
+  }
+
+  .delete-btn {
+    background-color: #dc3545;
+    color: white;
+  }
+
+  .delete-btn:hover {
+    background-color: #c82333;
+  }
+</style>
