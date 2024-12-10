@@ -2,6 +2,11 @@
 <div class="container">
   <h1>월별 예약 관리</h1>
 
+    <!-- 총 수익 표시 -->
+    <div id="totalProfit" style="margin-bottom: 20px; font-weight: bold; font-size: 1.2em;">
+      총 수익: 0 원
+    </div>
+
   <!-- 버튼 섹션 -->
   <div class="button-container">
     <button onclick="addRow()">행 추가</button>
@@ -245,6 +250,73 @@ function saveChanges() {
         event.target.closest('tr').remove();
       }
     }
+
+    // 자동 계산 기능
+    document.addEventListener('DOMContentLoaded', () => {
+      const tableBody = document.querySelector('#reservationTable tbody');
+      const totalProfitElement = document.getElementById('totalProfit');
+
+      const formatNumber = (number) => {
+          return number.toLocaleString('en-US'); // 천 단위로 쉼표 추가
+      };
+
+      function calculateRow(row) {
+        const getValue = (field) => parseFloat(row.querySelector(`[data-field="${field}"]`).innerText.trim()) || 0;
+
+        const totalPrice = getValue('totalPrice');
+        const deposit = getValue('deposit');
+        const departureFee = getValue('departureFee');
+        const arrivalFee = getValue('arrivalFee');
+        const dokdoFee = getValue('dokdoFee');
+        const restaurantFee = getValue('restaurantFee');
+        const eventFee = getValue('eventFee');
+        const otherFee = getValue('otherFee');
+        const refund = getValue('refund');
+
+        // 총금액 표시 (천 단위 쉼표 추가)
+        row.querySelector('[data-field="totalPrice"]').innerText = formatNumber(totalPrice);
+
+        // 잔금 계산
+        const balance = Math.floor(totalPrice - deposit); // 소수점 절삭
+        row.querySelector('[data-field="balance"]').innerText = formatNumber(balance);
+
+        // 총 정산비 계산
+        const totalSettlement =
+          departureFee + arrivalFee + dokdoFee + restaurantFee + eventFee + otherFee - refund;
+        row.querySelector('[data-field="totalSettlement"]').innerText = formatNumber(totalSettlement);
+
+        // 수익 계산
+        const profit = totalPrice - totalSettlement;
+        row.querySelector('[data-field="profit"]').innerText = formatNumber(profit);
+
+        return profit;
+      }
+
+
+      // 총 수익 계산 함수
+      function calculateTotalProfit() {
+        const rows = Array.from(tableBody.rows);
+        const totalProfit = rows.reduce((sum, row) => sum + calculateRow(row), 0);
+        totalProfitElement.innerText = `총 수익: ${formatNumber(totalProfit)} 원`;
+      }
+
+      // 테이블 값 변경 시 실시간 계산
+      tableBody.addEventListener('input', (e) => {
+        const row = e.target.closest('tr');
+        calculateRow(row);
+        calculateTotalProfit();
+      });
+
+      // 초기 총 수익 계산
+      calculateTotalProfit();
+    });
+
+    function exportToExcel() {
+      window.location.href = '/reservation/export';
+    }
+
+
+
     
     document.getElementById('reservationTable').addEventListener('input', (e) => {
       const row = e.target.closest('tr');

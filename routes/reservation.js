@@ -54,23 +54,38 @@ router.post('/add-bulk', async (req, res) => {
 
   router.post('/bulk-update', async (req, res) => {
     try {
-      for (const update of req.body) {
+      const updates = req.body.map((reservation) => ({
+        ...reservation,
+        balance: reservation.totalPrice - reservation.deposit,
+        totalSettlement:
+          reservation.departureFee +
+          reservation.arrivalFee +
+          reservation.dokdoFee +
+          reservation.restaurantFee +
+          reservation.eventFee +
+          reservation.otherFee -
+          reservation.refund,
+        profit: reservation.totalPrice - (reservation.departureFee +
+          reservation.arrivalFee +
+          reservation.dokdoFee +
+          reservation.restaurantFee +
+          reservation.eventFee +
+          reservation.otherFee -
+          reservation.refund),
+      }));
+  
+      for (const update of updates) {
         if (update._id) {
-          // 기존 데이터 업데이트
           await Reservation.findByIdAndUpdate(update._id, update, { new: true });
         } else {
-          // 새 데이터 삽입
-          const ship = await Ship.findOne({ name: update.ship });
-          await Reservation.create({
-            ...update,
-            ship: ship ? ship._id : null,
-          });
+          await Reservation.create(update);
         }
       }
+  
       res.json({ success: true });
     } catch (error) {
-      console.error('Error during bulk update:', error);
-      res.status(500).json({ success: false, message: 'Bulk update failed.' });
+      console.error('Bulk update error:', error);
+      res.status(500).json({ success: false });
     }
   });
   
@@ -192,7 +207,7 @@ router.get('/export', async (req, res) => {
       // 데이터 추가
       reservations.forEach((reservation) => {
         sheet.addRow({
-          shipName: reservation.ship?.name || '', // 선박명
+          shipName: reservation.ship?.name || 'N/A', // 선박명
           listStatus: reservation.listStatus || '', // 명단
           contractDate: reservation.contractDate?.toISOString().split('T')[0] || '', // 계약일
           departureDate: reservation.departureDate?.toISOString().split('T')[0] || '', // 출항일
