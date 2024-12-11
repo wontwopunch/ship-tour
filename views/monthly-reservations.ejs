@@ -294,6 +294,10 @@ function saveChanges() {
       function calculateRow(row) {
         const getValue = (field) => {
           const cell = row.querySelector(`[data-field="${field}"]`);
+          if (!cell) {
+            console.warn(`Cell with data-field "${field}" not found`);
+            return 0; // 셀이 없을 경우 0 반환
+          } 
           return parseFloat(cell.innerText.replace(/,/g, '').trim()) || 0; // 쉼표 제거 후 숫자로 변환
         };
 
@@ -309,6 +313,7 @@ function saveChanges() {
 
         // 총금액 표시 (천 단위 쉼표 추가)
         row.querySelector('[data-field="totalPrice"]').innerText = formatNumber(totalPrice);
+        row.querySelector('[data-field="deposit"]').innerText = formatNumber(deposit);
 
         // 잔금 계산
         const balance = Math.floor(totalPrice - deposit); // 소수점 절삭
@@ -359,9 +364,6 @@ function saveChanges() {
       window.location.href = '/reservation/export';
     }
 
-
-
-    
     document.getElementById('reservationTable').addEventListener('input', (e) => {
       const row = e.target.closest('tr');
       const id = row.getAttribute('data-id');
