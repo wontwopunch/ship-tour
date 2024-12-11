@@ -256,12 +256,35 @@ function saveChanges() {
       const tableBody = document.querySelector('#reservationTable tbody');
       const totalProfitElement = document.getElementById('totalProfit');
 
+      // 숫자 포맷 적용 함수
       const formatNumber = (number) => {
-          return number.toLocaleString('en-US'); // 천 단위로 쉼표 추가
+        return number.toLocaleString('en-US'); // 천 단위로 쉼표 추가
       };
 
+      // 셀 값 설정 함수 (천 단위 쉼표 추가)
+      const setFormattedValue = (cell, value) => {
+        const selection = window.getSelection();
+        const range = document.createRange();
+        const cursorPosition = cell.selectionStart || cell.innerText.length; // 커서 위치 저장
+
+        // 값 설정
+        cell.innerText = formatNumber(value);
+
+        // 커서 복원
+        if (document.activeElement === cell) {
+          range.setStart(cell.firstChild || cell, cursorPosition);
+          range.setEnd(cell.firstChild || cell, cursorPosition);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+      };
+
+
       function calculateRow(row) {
-        const getValue = (field) => parseFloat(row.querySelector(`[data-field="${field}"]`).innerText.trim()) || 0;
+        const getValue = (field) => {
+          const cell = row.querySelector(`[data-field="${field}"]`);
+          return parseFloat(cell.innerText.replace(/,/g, '').trim()) || 0; // 쉼표 제거 후 숫자로 변환
+        };
 
         const totalPrice = getValue('totalPrice');
         const deposit = getValue('deposit');
@@ -302,9 +325,19 @@ function saveChanges() {
 
       // 테이블 값 변경 시 실시간 계산
       tableBody.addEventListener('input', (e) => {
-        const row = e.target.closest('tr');
-        calculateRow(row);
-        calculateTotalProfit();
+        const cell = e.target.closest('[data-field]');
+        if (cell) {
+          const row = cell.closest('tr');
+
+          // 입력된 값에서 쉼표 제거 후 다시 설정
+          const rawValue = cell.innerText.replace(/,/g, '').trim();
+          const numericValue = parseFloat(rawValue) || 0;
+          setFormattedValue(cell, numericValue);
+
+          // 계산식 반영
+          calculateRow(row);
+          calculateTotalProfit();
+        }
       });
 
       // 초기 총 수익 계산
