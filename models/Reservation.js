@@ -10,11 +10,7 @@ const reservationSchema = new mongoose.Schema(
         trim: true 
     },
     contractDate: { type: Date, required: true, default: Date.now },
-    departureDate: {
-      type: Date,
-      required: [true, 'departureDate is required'],
-    },
-    
+    departureDate: { type: Date, required: true, default: Date.now },
     arrivalDate: { type: Date, required: true, default: Date.now },
     reservedBy: { type: String, required: true, default: 'Unknown' },
     reservedBy2: { type: String, default: '' },
