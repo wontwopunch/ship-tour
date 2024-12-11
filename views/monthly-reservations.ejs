@@ -265,19 +265,30 @@ function saveChanges() {
       const setFormattedValue = (cell, value) => {
         const selection = window.getSelection();
         const range = document.createRange();
-        const cursorPosition = cell.selectionStart || cell.innerText.length; // 커서 위치 저장
+
+        // 현재 커서 위치 계산
+        const currentText = cell.innerText || '';
+        const cursorPosition = Math.min(currentText.length, cell.selectionStart || currentText.length); // 커서 위치가 텍스트 길이를 초과하지 않도록 제한
 
         // 값 설정
         cell.innerText = formatNumber(value);
 
         // 커서 복원
         if (document.activeElement === cell) {
-          range.setStart(cell.firstChild || cell, cursorPosition);
-          range.setEnd(cell.firstChild || cell, cursorPosition);
-          selection.removeAllRanges();
-          selection.addRange(range);
+          const updatedText = cell.firstChild || cell; // 셀이 비어 있으면 텍스트 노드가 없을 수 있음
+          const safePosition = Math.min(cursorPosition, updatedText.length); // 커서 위치가 텍스트 길이를 초과하지 않도록 조정
+
+          try {
+            range.setStart(updatedText, safePosition);
+            range.setEnd(updatedText, safePosition);
+            selection.removeAllRanges();
+            selection.addRange(range);
+          } catch (e) {
+            console.error('Error restoring cursor position:', e);
+          }
         }
       };
+
 
 
       function calculateRow(row) {
