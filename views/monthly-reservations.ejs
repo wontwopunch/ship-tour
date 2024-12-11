@@ -187,14 +187,13 @@ function saveChanges() {
     function addRow() {
       const table = document.getElementById('reservationTable').getElementsByTagName('tbody')[0];
       const newRow = table.insertRow(0);
-    
-      // 서버에서 전달된 ships 데이터를 사용하여 드롭다운 생성
+
       const shipOptions = `
         <% ships.forEach(ship => { %>
           <option value="<%= ship._id %>"><%= ship.name %></option>
         <% }) %>
       `;
-    
+
       newRow.innerHTML = `
         <td>
           <select data-field="ship">
@@ -202,40 +201,41 @@ function saveChanges() {
             ${shipOptions}
           </select>
         </td>
-        <td contenteditable="true"></td>
+        <td contenteditable="true" data-field="listStatus"></td>
         <td><input type="date" data-field="contractDate" value="${new Date().toISOString().split('T')[0]}"></td>
         <td><input type="date" data-field="departureDate" value="${new Date().toISOString().split('T')[0]}"></td>
         <td><input type="date" data-field="arrivalDate" value="${new Date().toISOString().split('T')[0]}"></td>
-        <td contenteditable="true"></td>
-        <td contenteditable="true"></td>
-        <td contenteditable="true"></td>
-        <td contenteditable="true"></td>
-        <td contenteditable="true">0</td>
-        <td contenteditable="true">0</td>
-        <td contenteditable="true">0</td>
-        <td contenteditable="true">0</td>
+        <td contenteditable="true" data-field="reservedBy"></td>
+        <td contenteditable="true" data-field="reservedBy2"></td>
+        <td contenteditable="true" data-field="contact"></td>
+        <td contenteditable="true" data-field="product"></td>
+        <td contenteditable="true" data-field="totalSeats">0</td>
+        <td contenteditable="true" data-field="economySeats">0</td>
+        <td contenteditable="true" data-field="businessSeats">0</td>
+        <td contenteditable="true" data-field="firstSeats">0</td>
         <td><input type="date" data-field="dokdoTourDate"></td>
-        <td contenteditable="true">0</td>
-        <td contenteditable="true"></td>
-        <td contenteditable="true"></td>
-        <td contenteditable="true">0</td>
-        <td contenteditable="true">0</td>
-        <td contenteditable="true">0</td>
-        <td contenteditable="true"></td>
-        <td contenteditable="true"></td>
-        <td contenteditable="true"></td>
-        <td contenteditable="true">0</td>
-        <td contenteditable="true">0</td>
-        <td contenteditable="true">0</td>
-        <td contenteditable="true">0</td>
-        <td contenteditable="true">0</td>
-        <td contenteditable="true">0</td>
-        <td contenteditable="true">0</td>
-        <td contenteditable="true">0</td>
-        <td contenteditable="true">0</td>
+        <td contenteditable="true" data-field="dokdoTourPeople">0</td>
+        <td contenteditable="true" data-field="dokdoTourTime"></td>
+        <td contenteditable="true" data-field="dokdoTourDetails"></td>
+        <td contenteditable="true" data-field="totalPrice">0</td>
+        <td contenteditable="true" data-field="deposit">0</td>
+        <td contenteditable="true" data-field="balance">0</td>
+        <td contenteditable="true" data-field="rentalCar"></td>
+        <td contenteditable="true" data-field="accommodation"></td>
+        <td contenteditable="true" data-field="others"></td>
+        <td contenteditable="true" data-field="departureFee">0</td>
+        <td contenteditable="true" data-field="arrivalFee">0</td>
+        <td contenteditable="true" data-field="dokdoFee">0</td>
+        <td contenteditable="true" data-field="restaurantFee">0</td>
+        <td contenteditable="true" data-field="eventFee">0</td>
+        <td contenteditable="true" data-field="otherFee">0</td>
+        <td contenteditable="true" data-field="refund">0</td>
+        <td contenteditable="true" data-field="totalSettlement">0</td>
+        <td contenteditable="true" data-field="profit">0</td>
         <td><button onclick="deleteRow(null)">삭제</button></td>
       `;
     }
+
     
     function deleteRow(id) {
       if (!confirm('이 행을 삭제하시겠습니까?')) return;
@@ -268,15 +268,16 @@ function saveChanges() {
 
         // 현재 커서 위치 계산
         const currentText = cell.innerText || '';
-        const cursorPosition = Math.min(currentText.length, cell.selectionStart || currentText.length); // 커서 위치가 텍스트 길이를 초과하지 않도록 제한
+        const cursorPosition = Math.min(currentText.length, cell.selectionStart || currentText.length); // 커서 위치 제한
 
         // 값 설정
         cell.innerText = formatNumber(value);
 
         // 커서 복원
         if (document.activeElement === cell) {
-          const updatedText = cell.firstChild || cell; // 셀이 비어 있으면 텍스트 노드가 없을 수 있음
-          const safePosition = Math.min(cursorPosition, updatedText.length); // 커서 위치가 텍스트 길이를 초과하지 않도록 조정
+          const updatedText = cell.firstChild || document.createTextNode(''); // 기본 노드 생성
+          if (!cell.firstChild) cell.appendChild(updatedText); // 텍스트 노드 추가
+          const safePosition = Math.min(cursorPosition, updatedText.length); // 안전한 커서 위치 계산
 
           try {
             range.setStart(updatedText, safePosition);
@@ -291,16 +292,16 @@ function saveChanges() {
 
 
 
+
       function calculateRow(row) {
         const getValue = (field) => {
           const cell = row.querySelector(`[data-field="${field}"]`);
           if (!cell) {
             console.warn(`Cell with data-field "${field}" not found`);
-            return 0; // 셀이 없을 경우 0 반환
-          } 
+            return 0; // 셀이 없을 경우 기본값 0 반환
+          }
           return parseFloat(cell.innerText.replace(/,/g, '').trim()) || 0; // 쉼표 제거 후 숫자로 변환
         };
-
         const totalPrice = getValue('totalPrice');
         const deposit = getValue('deposit');
         const departureFee = getValue('departureFee');
