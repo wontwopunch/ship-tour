@@ -129,12 +129,43 @@
     const selection = window.getSelection();
     const textNode = element.firstChild || element;
     
-    if (textNode.nodeType === 3) { // Text node
+    if (textNode.nodeType === 3) {
       position = Math.min(position, textNode.length);
       range.setStart(textNode, position);
       range.setEnd(textNode, position);
       selection.removeAllRanges();
       selection.addRange(range);
+    }
+  }
+
+  // 셀 값 설정 함수
+  function setFormattedValue(cell, value) {
+    // 숫자 필드인지 확인
+    const isNumericField = [
+      'totalPrice', 'deposit', 'balance', 'departureFee', 'arrivalFee', 
+      'dokdoFee', 'restaurantFee', 'eventFee', 'otherFee', 'refund', 
+      'totalSettlement', 'profit', 'totalSeats', 'economySeats', 
+      'businessSeats', 'firstSeats', 'dokdoTourPeople'
+    ].includes(cell.getAttribute('data-field'));
+
+    if (!isNumericField) {
+      cell.innerText = value;
+      return;
+    }
+
+    if (value === 0 && document.activeElement === cell) {
+      cell.innerText = '';
+      return;
+    }
+
+    const cursorPosition = getCaretPosition(cell);
+    const previousCommas = (cell.innerText.match(/,/g) || []).length;
+    cell.innerText = value === 0 ? '' : value.toLocaleString('en-US');
+    const newCommas = (cell.innerText.match(/,/g) || []).length;
+    const commaDiff = newCommas - previousCommas;
+    
+    if (document.activeElement === cell) {
+      setCaretPosition(cell, cursorPosition + commaDiff);
     }
   }
 
@@ -158,9 +189,23 @@
         if (index < headers.length) {
           const selectElement = cell.querySelector('select');
           const inputElement = cell.querySelector('input');
-          acc[headers[index]] = selectElement ? selectElement.value : 
-                              inputElement ? inputElement.value :
-                              cell.innerText.trim();
+          const fieldName = headers[index];
+
+          if (selectElement) {
+            acc[fieldName] = selectElement.value;
+          } else if (inputElement) {
+            acc[fieldName] = inputElement.value;
+          } else {
+            const value = cell.innerText.trim();
+            if (['totalPrice', 'deposit', 'balance', 'departureFee', 'arrivalFee', 
+                'dokdoFee', 'restaurantFee', 'eventFee', 'otherFee', 'refund', 
+                'totalSettlement', 'profit', 'totalSeats', 'economySeats', 
+                'businessSeats', 'firstSeats', 'dokdoTourPeople'].includes(fieldName)) {
+              acc[fieldName] = parseFloat(value.replace(/,/g, '')) || 0;
+            } else {
+              acc[fieldName] = value;
+            }
+          }
         }
         return acc;
       }, {});
@@ -189,7 +234,7 @@
     ]).then(() => {
       alert('저장되었습니다.');
       if (newData.length > 0) {
-        location.reload(); // 새로운 데이터가 있을 때만 새로고침
+        location.reload();
       }
     }).catch(error => {
       console.error('저장 중 오류:', error);
@@ -268,45 +313,35 @@
     }
   }
 
-  // 자동 계산 기능
+  // 자동 계산 기능 초기화
   document.addEventListener('DOMContentLoaded', () => {
-    const tableBody = document.querySelector('#reservationTable tbody');
+    const table = document.getElementById('reservationTable');
+    const tableBody = table.querySelector('tbody');
     const totalProfitElement = document.getElementById('totalProfit');
+    
+    // select 변경 이벤트
+    table.addEventListener('change', (e) => {
+      if (e.target.tagName === 'SELECT') {
+        const row = e.target.closest('tr');
+        const id = row.getAttribute('data-id');
+        if (!id) return;
 
-    // 숫자 포맷 적용 함수
-    const formatNumber = (number) => {
-      return number.toLocaleString('en-US'); // 천 단위로 쉼표 추가
-    };
+        const updatedData = {
+          ship: e.target.value
+        };
 
-    // 셀 값 설정 함수 (천 단위 쉼표 추가)
-    const setFormattedValue = (cell, value) => {
-      // 현재 커서 위치 저장
-      const cursorPosition = getCaretPosition(cell);
-      
-      // 이전 값의 쉼표 개수
-      const previousCommas = (cell.innerText.match(/,/g) || []).length;
-      
-      // 새 값 설정
-      cell.innerText = formatNumber(value);
-      
-      // 새 값의 쉼표 개수
-      const newCommas = (cell.innerText.match(/,/g) || []).length;
-      
-      // 쉼표 차이를 고려한 커서 위치 조정
-      const commaDiff = newCommas - previousCommas;
-      const newPosition = cursorPosition + commaDiff;
-      
-      // 커서 위치 복원
-      setCaretPosition(cell, newPosition);
-    };
+        fetch(`/reservation/update/${id}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedData),
+        });
+      }
+    });
 
     function calculateRow(row) {
       const getValue = (field) => {
         const cell = row.querySelector(`[data-field="${field}"]`);
-        if (!cell) {
-          console.warn(`Cell with data-field "${field}" not found`);
-          return 0;
-        }
+        if (!cell) return 0;
         return parseFloat(cell.innerText.replace(/,/g, '').trim()) || 0;
       };
 
@@ -319,14 +354,6 @@
       const eventFee = getValue('eventFee');
       const otherFee = getValue('otherFee');
       const refund = getValue('refund');
-
-      // 총금액 표시
-      const totalPriceCell = row.querySelector('[data-field="totalPrice"]');
-      setFormattedValue(totalPriceCell, totalPrice);
-
-      // 계약금 표시
-      const depositCell = row.querySelector('[data-field="deposit"]');
-      setFormattedValue(depositCell, deposit);
 
       // 잔금 계산
       const balance = Math.floor(totalPrice - deposit);
@@ -347,71 +374,52 @@
       return profit;
     }
 
-    // 총 수익 계산 함수
     function calculateTotalProfit() {
       const rows = Array.from(tableBody.rows);
       const totalProfit = rows.reduce((sum, row) => sum + calculateRow(row), 0);
-      totalProfitElement.innerText = `총 수익: ${formatNumber(totalProfit)} 원`;
+      totalProfitElement.innerText = `총 수익: ${totalProfit.toLocaleString('en-US')} 원`;
     }
 
-    // 테이블 값 변경 시 실시간 계산
+    // 테이블 값 변경 이벤트
     tableBody.addEventListener('input', (e) => {
       const cell = e.target.closest('[data-field]');
-      if (cell) {
-        const row = cell.closest('tr');
+      if (!cell) return;
 
-        // 입력된 값에서 쉼표 제거 후 다시 설정
-        const rawValue = cell.innerText.replace(/,/g, '').trim();
-        const numericValue = parseFloat(rawValue) || 0;
-        setFormattedValue(cell, numericValue);
+      const row = cell.closest('tr');
+      if (!row) return;
 
-        // 계산식 반영
-        calculateRow(row);
-        calculateTotalProfit();
+      // select 엘리먼트의 경우 처리하지 않음
+      if (e.target.tagName === 'SELECT') return;
+
+      const rawValue = cell.innerText.replace(/,/g, '').trim();
+      const numericValue = parseFloat(rawValue) || 0;
+      setFormattedValue(cell, numericValue);
+
+      calculateRow(row);
+      calculateTotalProfit();
+
+      // 실시간 업데이트
+      const id = row.getAttribute('data-id');
+      if (id) {
+        const updatedData = {};
+        const fieldName = cell.getAttribute('data-field');
+        updatedData[fieldName] = numericValue;
+
+        fetch(`/reservation/update/${id}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedData),
+        });
       }
     });
 
-    // 초기 총 수익 계산
+    // 초기 계산
     calculateTotalProfit();
   });
 
   function exportToExcel() {
     window.location.href = '/reservation/export';
   }
-
-  // 실시간 업데이트 이벤트 리스너
-  document.getElementById('reservationTable').addEventListener('input', (e) => {
-    const row = e.target.closest('tr');
-    const id = row.getAttribute('data-id');
-
-    if (!id) return;
-
-    const updatedData = [...row.cells].reduce((acc, cell, index) => {
-      const headers = [
-        'ship', 'listStatus', 'contractDate', 'departureDate', 'arrivalDate',
-        'reservedBy', 'reservedBy2', 'contact', 'product', 'totalSeats',
-        'economySeats', 'businessSeats', 'firstSeats', 'dokdoTourDate',
-        'dokdoTourPeople', 'dokdoTourTime', 'dokdoTourDetails', 'totalPrice',
-        'deposit', 'balance', 'rentalCar', 'accommodation', 'others',
-        'departureFee', 'arrivalFee', 'dokdoFee', 'restaurantFee',
-        'eventFee', 'otherFee', 'refund', 'totalSettlement', 'profit',
-      ];
-      if (index < headers.length) {
-        const selectElement = cell.querySelector('select');
-        const inputElement = cell.querySelector('input');
-        acc[headers[index]] = selectElement ? selectElement.value : 
-                            inputElement ? inputElement.value :
-                            cell.innerText.trim();
-      }
-      return acc;
-    }, {});
-
-    fetch(`/reservation/update/${id}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updatedData),
-    });
-  });
 </script>
 
 <style>
