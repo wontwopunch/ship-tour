@@ -138,7 +138,6 @@
     }
   }
 
-  // 셀 값 설정 함수
   function setFormattedValue(cell, value) {
     const numericFields = [
       'totalSeats', 'economySeats', 'businessSeats', 'firstSeats',
@@ -163,7 +162,15 @@
       cell.innerText = value.toString();
       if (isActiveCell) {
         // 텍스트 필드의 경우 이전 커서 위치 유지
-        setCaretPosition(cell, cursorPosition);
+        const range = document.createRange();
+        const textNode = cell.firstChild || cell;
+        if (textNode.nodeType === 3) {
+          const newPosition = Math.min(cursorPosition, textNode.length);
+          range.setStart(textNode, newPosition);
+          range.setEnd(textNode, newPosition);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
       }
       return;
     }
@@ -339,25 +346,6 @@
     const tableBody = table.querySelector('tbody');
     const totalProfitElement = document.getElementById('totalProfit');
     
-    // select 변경 이벤트
-    table.addEventListener('change', (e) => {
-      if (e.target.tagName === 'SELECT') {
-        const row = e.target.closest('tr');
-        const id = row.getAttribute('data-id');
-        if (!id) return;
-
-        const updatedData = {
-          ship: e.target.value
-        };
-
-        fetch(`/reservation/update/${id}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updatedData),
-        });
-      }
-    });
-
     function calculateRow(row) {
       const getValue = (field) => {
         const cell = row.querySelector(`[data-field="${field}"]`);
@@ -400,8 +388,17 @@
       totalProfitElement.innerText = `총 수익: ${totalProfit.toLocaleString('en-US')} 원`;
     }
 
-    // 테이블 값 변경 이벤트
+    // 한글 입력 완료 이벤트
+    tableBody.addEventListener('compositionend', handleInput);
+
+    // 일반 입력 이벤트
     tableBody.addEventListener('input', (e) => {
+      // IME 입력 중에는 처리하지 않음
+      if (e.isComposing) return;
+      handleInput(e);
+    });
+
+    function handleInput(e) {
       const cell = e.target.closest('[data-field]');
       if (!cell) return;
 
@@ -412,6 +409,7 @@
 
       const fieldName = cell.getAttribute('data-field');
       const value = cell.innerText.trim();
+      let processedValue = value;
 
       const numericFields = [
         'totalSeats', 'economySeats', 'businessSeats', 'firstSeats',
@@ -425,12 +423,31 @@
       const isNumericField = numericFields.includes(fieldName);
 
       if (isNumericField) {
-        // 숫자 필드 처리
-        const numericValue = parseFloat(value.replace(/,/g, '')) || 0;
-        setFormattedValue(cell, numericValue);
+        processedValue = parseFloat(value.replace(/,/g, '')) || 0;
+      }
+
+      // 현재 커서 위치 저장
+      const selection = window.getSelection();
+      const cursorPosition = selection.focusOffset;
+
+      // 값 설정
+      if (isNumericField) {
+        setFormattedValue(cell, processedValue);
       } else {
-        // 텍스트 필드 처리
-        setFormattedValue(cell, value);
+        cell.innerText = processedValue;
+      }
+
+      // 커서 위치 복원 (텍스트 필드의 경우)
+      if (!isNumericField && document.activeElement === cell) {
+        const range = document.createRange();
+        const textNode = cell.firstChild || cell;
+        if (textNode.nodeType === 3) {
+          const newPosition = Math.min(cursorPosition, textNode.length);
+          range.setStart(textNode, newPosition);
+          range.setEnd(textNode, newPosition);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
       }
 
       calculateRow(row);
@@ -440,9 +457,26 @@
       const id = row.getAttribute('data-id');
       if (id) {
         const updatedData = {};
-        updatedData[fieldName] = isNumericField ? 
-          (parseFloat(value.replace(/,/g, '')) || 0) : 
-          value;
+        updatedData[fieldName] = processedValue;
+
+        fetch(`/reservation/update/${id}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedData),
+        });
+      }
+    }
+
+    // select 변경 이벤트
+    table.addEventListener('change', (e) => {
+      if (e.target.tagName === 'SELECT') {
+        const row = e.target.closest('tr');
+        const id = row.getAttribute('data-id');
+        if (!id) return;
+
+        const updatedData = {
+          ship: e.target.value
+        };
 
         fetch(`/reservation/update/${id}`, {
           method: 'POST',
