@@ -140,7 +140,6 @@
 
   // 셀 값 설정 함수
   function setFormattedValue(cell, value) {
-    // 숫자 필드 명시적 지정
     const numericFields = [
       'totalSeats', 'economySeats', 'businessSeats', 'firstSeats',
       'dokdoTourPeople',
@@ -152,27 +151,39 @@
 
     const fieldName = cell.getAttribute('data-field');
     const isNumericField = numericFields.includes(fieldName);
+    const isActiveCell = document.activeElement === cell;
+    
+    // 현재 커서 위치와 텍스트 길이 저장
+    const currentLength = cell.innerText.length;
+    const selection = window.getSelection();
+    const cursorPosition = isActiveCell ? selection.focusOffset : 0;
 
     if (!isNumericField) {
       // 텍스트 필드는 그대로 값 설정
       cell.innerText = value.toString();
+      if (isActiveCell) {
+        // 텍스트 필드의 경우 이전 커서 위치 유지
+        setCaretPosition(cell, cursorPosition);
+      }
       return;
     }
 
     // 숫자 필드 처리
-    if (value === 0 && document.activeElement === cell) {
+    if (value === 0 && isActiveCell) {
       cell.innerText = '';
       return;
     }
 
-    const cursorPosition = getCaretPosition(cell);
-    const previousCommas = (cell.innerText.match(/,/g) || []).length;
-    cell.innerText = value === 0 ? '' : value.toLocaleString('en-US');
-    const newCommas = (cell.innerText.match(/,/g) || []).length;
-    const commaDiff = newCommas - previousCommas;
-    
-    if (document.activeElement === cell) {
-      setCaretPosition(cell, cursorPosition + commaDiff);
+    const formattedValue = value === 0 ? '' : value.toLocaleString('en-US');
+    cell.innerText = formattedValue;
+
+    if (isActiveCell) {
+      // 입력 중인 경우 커서 위치 조정
+      const newPosition = Math.min(
+        cursorPosition + (formattedValue.length - currentLength),
+        formattedValue.length
+      );
+      setCaretPosition(cell, Math.max(0, newPosition));
     }
   }
 
