@@ -7,112 +7,114 @@
       총 수익: 0 원
     </div>
 
-  <!-- 버튼 섹션 -->
+  <!-- 버튼 및 필터 -->
   <div class="button-container">
     <button onclick="addRow()">행 추가</button>
     <button onclick="exportToExcel()">엑셀 저장</button>
     <button onclick="saveChanges()">저장</button>
   </div>
+  <div class="filters">
+    <label for="reservedByFilter">예약자 검색:</label>
+    <input type="text" id="reservedByFilter" placeholder="예약자명 입력" oninput="filterByReservedBy()">
 
-  <label for="reservedByFilter">예약자 검색:</label>
-  <input type="text" id="reservedByFilter" placeholder="예약자명 입력" oninput="filterByReservedBy()">
-
-  <!-- 월별 필터링 -->
-  <label for="monthFilter">월 선택:</label>
-  <select id="monthFilter" onchange="filterByMonth()">
-    <option value="all">전체</option>
-    <% for (let i = 1; i <= 12; i++) { %>
-      <option value="<%= i %>" <%= selectedMonth == i ? 'selected' : '' %>><%= i %>월</option>
-    <% } %>
-  </select>
+    <label for="monthFilter">월 선택:</label>
+    <select id="monthFilter" onchange="filterByMonth()">
+      <option value="all">전체</option>
+      <% for (let i = 1; i <= 12; i++) { %>
+        <option value="<%= i %>" <%= selectedMonth == i ? 'selected' : '' %>><%= i %>월</option>
+      <% } %>
+    </select>
+  </div>
 
   <!-- 예약 테이블 -->
-  <table border="1" id="reservationTable">
-    <thead>
-      <tr>
-        <th>선박명</th>
-        <th>명단</th>
-        <th>계약일</th>
-        <th>출항일</th>
-        <th>입항일</th>
-        <th>예약자명</th>
-        <th>예약자명2</th>
-        <th>연락처</th>
-        <th>상품</th>
-        <th>총 좌석</th>
-        <th>이코노미</th>
-        <th>비즈니스</th>
-        <th>퍼스트</th>
-        <th>독도 관광 날짜</th>
-        <th>독도 관광 인원</th>
-        <th>독도 관광 시간</th>
-        <th>상품내용</th>
-        <th>총금액</th>
-        <th>계약금</th>
-        <th>잔금</th>
-        <th>렌터카</th>
-        <th>숙박</th>
-        <th>기타</th>
-        <th>출항비</th>
-        <th>입항비</th>
-        <th>독도비</th>
-        <th>식당비</th>
-        <th>행사비</th>
-        <th>기타비</th>
-        <th>환불</th>
-        <th>총 정산비</th>
-        <th>수익</th>
-        <th>삭제</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% reservations.forEach(reservation => { %>
-        <tr data-id="<%= reservation._id %>">
-          <td>
-            <select data-field="ship">
-              <option value="" disabled <%= !reservation.ship ? 'selected' : '' %>>선박 선택</option>
-              <% ships.forEach(ship => { %>
-                <option value="<%= ship._id %>" <%= reservation.ship && reservation.ship._id == ship._id ? 'selected' : '' %>><%= ship.name %></option>
-              <% }) %>
-            </select>
-          </td>
-          <td contenteditable="true" data-field="listStatus"><%= reservation.listStatus || '' %></td>
-          <td><input type="date" value="<%= reservation.contractDate ? reservation.contractDate.toISOString().split('T')[0] : '' %>" data-field="contractDate"></td>
-          <td><input type="date" value="<%= reservation.departureDate ? reservation.departureDate.toISOString().split('T')[0] : '' %>" data-field="departureDate"></td>
-          <td><input type="date" value="<%= reservation.arrivalDate ? reservation.arrivalDate.toISOString().split('T')[0] : '' %>" data-field="arrivalDate"></td>
-          <td contenteditable="true" data-field="reservedBy"><%= reservation.reservedBy || '' %></td>
-          <td contenteditable="true" data-field="reservedBy2"><%= reservation.reservedBy2 || '' %></td>
-          <td contenteditable="true" data-field="contact"><%= reservation.contact || '' %></td>
-          <td contenteditable="true" data-field="product"><%= reservation.product || '' %></td>
-          <td contenteditable="true" data-field="totalSeats"><%= reservation.totalSeats || 0 %></td>
-          <td contenteditable="true" data-field="economySeats"><%= reservation.economySeats || 0 %></td>
-          <td contenteditable="true" data-field="businessSeats"><%= reservation.businessSeats || 0 %></td>
-          <td contenteditable="true" data-field="firstSeats"><%= reservation.firstSeats || 0 %></td>
-          <td><input type="date" value="<%= reservation.dokdoTourDate ? reservation.dokdoTourDate.toISOString().split('T')[0] : '' %>" data-field="dokdoTourDate"></td>
-          <td contenteditable="true" data-field="dokdoTourPeople"><%= reservation.dokdoTourPeople || 0 %></td>
-          <td contenteditable="true" data-field="dokdoTourTime"><%= reservation.dokdoTourTime || '' %></td>
-          <td contenteditable="true" data-field="dokdoTourDetails"><%= reservation.dokdoTourDetails || '' %></td>
-          <td contenteditable="true" data-field="totalPrice"><%= reservation.totalPrice || 0 %></td>
-          <td contenteditable="true" data-field="deposit"><%= reservation.deposit || 0 %></td>
-          <td contenteditable="true" data-field="balance"><%= reservation.balance || 0 %></td>
-          <td contenteditable="true" data-field="rentalCar"><%= reservation.rentalCar || '' %></td>
-          <td contenteditable="true" data-field="accommodation"><%= reservation.accommodation || '' %></td>
-          <td contenteditable="true" data-field="others"><%= reservation.others || '' %></td>
-          <td contenteditable="true" data-field="departureFee"><%= reservation.departureFee || 0 %></td>
-          <td contenteditable="true" data-field="arrivalFee"><%= reservation.arrivalFee || 0 %></td>
-          <td contenteditable="true" data-field="dokdoFee"><%= reservation.dokdoFee || 0 %></td>
-          <td contenteditable="true" data-field="restaurantFee"><%= reservation.restaurantFee || 0 %></td>
-          <td contenteditable="true" data-field="eventFee"><%= reservation.eventFee || 0 %></td>
-          <td contenteditable="true" data-field="otherFee"><%= reservation.otherFee || 0 %></td>
-          <td contenteditable="true" data-field="refund"><%= reservation.refund || 0 %></td>
-          <td contenteditable="true" data-field="totalSettlement"><%= reservation.totalSettlement || 0 %></td>
-          <td contenteditable="true" data-field="profit"><%= reservation.profit || 0 %></td>
-          <td><button onclick="deleteRow('<%= reservation._id %>')">삭제</button></td>
+  <div class="table-container">
+    <table border="1" id="reservationTable">
+      <thead>
+        <tr>
+          <th>선박명</th>
+          <th>명단</th>
+          <th>계약일</th>
+          <th>출항일</th>
+          <th>입항일</th>
+          <th>예약자명</th>
+          <th>예약자명2</th>
+          <th>연락처</th>
+          <th>상품</th>
+          <th>총 좌석</th>
+          <th>이코노미</th>
+          <th>비즈니스</th>
+          <th>퍼스트</th>
+          <th>독도 관광 날짜</th>
+          <th>독도 관광 인원</th>
+          <th>독도 관광 시간</th>
+          <th>상품내용</th>
+          <th>총금액</th>
+          <th>계약금</th>
+          <th>잔금</th>
+          <th>렌터카</th>
+          <th>숙박</th>
+          <th>기타</th>
+          <th>출항비</th>
+          <th>입항비</th>
+          <th>독도비</th>
+          <th>식당비</th>
+          <th>행사비</th>
+          <th>기타비</th>
+          <th>환불</th>
+          <th>총 정산비</th>
+          <th>수익</th>
+          <th>삭제</th>
         </tr>
-      <% }) %>
-    </tbody>
-  </table>
-</div>
+      </thead>
+      <tbody>
+        <% reservations.forEach(reservation => { %>
+          <tr data-id="<%= reservation._id %>">
+            <td>
+              <select data-field="ship">
+                <option value="" disabled <%= !reservation.ship ? 'selected' : '' %>>선박 선택</option>
+                <% ships.forEach(ship => { %>
+                  <option value="<%= ship._id %>" <%= reservation.ship && reservation.ship._id == ship._id ? 'selected' : '' %>><%= ship.name %></option>
+                <% }) %>
+              </select>
+            </td>
+            <td contenteditable="true" data-field="listStatus"><%= reservation.listStatus || '' %></td>
+            <td><input type="date" value="<%= reservation.contractDate ? reservation.contractDate.toISOString().split('T')[0] : '' %>" data-field="contractDate"></td>
+            <td><input type="date" value="<%= reservation.departureDate ? reservation.departureDate.toISOString().split('T')[0] : '' %>" data-field="departureDate"></td>
+            <td><input type="date" value="<%= reservation.arrivalDate ? reservation.arrivalDate.toISOString().split('T')[0] : '' %>" data-field="arrivalDate"></td>
+            <td contenteditable="true" data-field="reservedBy"><%= reservation.reservedBy || '' %></td>
+            <td contenteditable="true" data-field="reservedBy2"><%= reservation.reservedBy2 || '' %></td>
+            <td contenteditable="true" data-field="contact"><%= reservation.contact || '' %></td>
+            <td contenteditable="true" data-field="product"><%= reservation.product || '' %></td>
+            <td contenteditable="true" data-field="totalSeats"><%= reservation.totalSeats || 0 %></td>
+            <td contenteditable="true" data-field="economySeats"><%= reservation.economySeats || 0 %></td>
+            <td contenteditable="true" data-field="businessSeats"><%= reservation.businessSeats || 0 %></td>
+            <td contenteditable="true" data-field="firstSeats"><%= reservation.firstSeats || 0 %></td>
+            <td><input type="date" value="<%= reservation.dokdoTourDate ? reservation.dokdoTourDate.toISOString().split('T')[0] : '' %>" data-field="dokdoTourDate"></td>
+            <td contenteditable="true" data-field="dokdoTourPeople"><%= reservation.dokdoTourPeople || 0 %></td>
+            <td contenteditable="true" data-field="dokdoTourTime"><%= reservation.dokdoTourTime || '' %></td>
+            <td contenteditable="true" data-field="dokdoTourDetails"><%= reservation.dokdoTourDetails || '' %></td>
+            <td contenteditable="true" data-field="totalPrice"><%= reservation.totalPrice || 0 %></td>
+            <td contenteditable="true" data-field="deposit"><%= reservation.deposit || 0 %></td>
+            <td contenteditable="true" data-field="balance"><%= reservation.balance || 0 %></td>
+            <td contenteditable="true" data-field="rentalCar"><%= reservation.rentalCar || '' %></td>
+            <td contenteditable="true" data-field="accommodation"><%= reservation.accommodation || '' %></td>
+            <td contenteditable="true" data-field="others"><%= reservation.others || '' %></td>
+            <td contenteditable="true" data-field="departureFee"><%= reservation.departureFee || 0 %></td>
+            <td contenteditable="true" data-field="arrivalFee"><%= reservation.arrivalFee || 0 %></td>
+            <td contenteditable="true" data-field="dokdoFee"><%= reservation.dokdoFee || 0 %></td>
+            <td contenteditable="true" data-field="restaurantFee"><%= reservation.restaurantFee || 0 %></td>
+            <td contenteditable="true" data-field="eventFee"><%= reservation.eventFee || 0 %></td>
+            <td contenteditable="true" data-field="otherFee"><%= reservation.otherFee || 0 %></td>
+            <td contenteditable="true" data-field="refund"><%= reservation.refund || 0 %></td>
+            <td contenteditable="true" data-field="totalSettlement"><%= reservation.totalSettlement || 0 %></td>
+            <td contenteditable="true" data-field="profit"><%= reservation.profit || 0 %></td>
+            <td><button onclick="deleteRow('<%= reservation._id %>')">삭제</button></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+   </div>
+  </div>
 
 <script>
   function getCaretPosition(element) {

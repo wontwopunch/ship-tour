@@ -10,6 +10,7 @@ function isValidDate(d) {
 }
 
 // 월별 예약 데이터 조회
+// 월별 예약 데이터 조회
 router.get('/monthly', async (req, res) => {
   const { month } = req.query;
   const currentMonth = month || new Date().getMonth() + 1;
@@ -18,30 +19,18 @@ router.get('/monthly', async (req, res) => {
     const startDate = new Date(`2024-${currentMonth}-01`);
     const endDate = new Date(`2024-${currentMonth}-31`);
 
-    if (!isValidDate(startDate) || !isValidDate(endDate)) {
-      console.error('Invalid date range:', { startDate, endDate });
-      return res.status(400).send('Invalid date range');
-    }
-
     const [reservations, ships] = await Promise.all([
       Reservation.find({ departureDate: { $gte: startDate, $lt: endDate } })
         .populate({
           path: 'ship',
           select: '_id name', // 필요한 필드만 가져오기
         })
-        .sort({ departureDate: 1, arrivalDate: 1 }),
+        .sort({ departureDate: 1 }),
       Ship.find(),
     ]);
 
-    // reservations와 ships가 올바르게 전달되는지 확인
-    console.log('Reservations:', reservations);
-    console.log('Ships:', ships);
-
     res.render('monthly-reservations', {
-      reservations: reservations.map((reservation) => ({
-        ...reservation.toObject(),
-        ship: reservation.ship || null, // ship이 없는 경우 null 처리
-      })),
+      reservations: reservations || [],
       selectedMonth: currentMonth,
       ships,
     });
