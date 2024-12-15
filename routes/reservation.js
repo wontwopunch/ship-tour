@@ -28,8 +28,12 @@ router.get('/monthly', async (req, res) => {
       Ship.find(),
     ]);
 
-    if (!reservations.length) {
-      console.warn('No reservations found for the given month:', { startDate, endDate });
+    console.log('Reservations fetched:', reservations);
+    console.log('Ships fetched:', ships);
+
+    // 빈 데이터 처리
+    if (!reservations || reservations.length === 0) {
+      console.warn('No reservations found for the given month.');
     }
 
     res.render('monthly-reservations', {
@@ -45,6 +49,7 @@ router.get('/monthly', async (req, res) => {
     res.status(500).send('Error fetching reservations.');
   }
 });
+
 
 
 // 새 예약 데이터 일괄 삽입
