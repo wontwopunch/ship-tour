@@ -155,11 +155,11 @@
         value,
       };
 
-      fetch('/status/update-block', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updateData),
-      })
+      fetch('/status/monthly/update-block', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ updates }),
+    })
         .then((response) => {
           if (!response.ok) throw new Error('Failed to update block data');
           return response.json();
