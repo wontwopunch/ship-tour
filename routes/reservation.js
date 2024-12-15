@@ -24,7 +24,9 @@ router.get('/monthly', async (req, res) => {
     }
 
     const [reservations, ships] = await Promise.all([
-      Reservation.find({ departureDate: { $gte: startDate, $lt: endDate } }).populate('ship'),
+      Reservation.find({ departureDate: { $gte: startDate, $lt: endDate } })
+        .populate('ship')
+        .sort({ departureDate: 1, arrivalDate: 1 }), // 출항일 기준 정렬 및 입항일 추가 정렬
       Ship.find(),
     ]);
 
@@ -67,27 +69,17 @@ router.post('/add-bulk', async (req, res) => {
 router.post('/bulk-update', async (req, res) => {
   try {
     const updates = req.body.map((reservation) => {
-      const departureDate = new Date(reservation.departureDate);
+      const departureFee = reservation.departureFee || 0;
+      const arrivalFee = reservation.arrivalFee || 0;
+      const dokdoFee = reservation.dokdoFee || 0;
+      const restaurantFee = reservation.restaurantFee || 0;
+      const eventFee = reservation.eventFee || 0;
+      const otherFee = reservation.otherFee || 0;
+      const refund = reservation.refund || 0;
+
       return {
         ...reservation,
-        departureDate: isValidDate(departureDate) ? departureDate : new Date(),
-        balance: reservation.totalPrice - reservation.deposit,
-        totalSettlement:
-          reservation.departureFee +
-          reservation.arrivalFee +
-          reservation.dokdoFee +
-          reservation.restaurantFee +
-          reservation.eventFee +
-          reservation.otherFee -
-          reservation.refund,
-        profit: reservation.totalPrice -
-          (reservation.departureFee +
-            reservation.arrivalFee +
-            reservation.dokdoFee +
-            reservation.restaurantFee +
-            reservation.eventFee +
-            reservation.otherFee -
-            reservation.refund),
+        totalSettlement: departureFee + arrivalFee + dokdoFee + restaurantFee + eventFee + otherFee - refund, // 수정된 계산식
       };
     });
 

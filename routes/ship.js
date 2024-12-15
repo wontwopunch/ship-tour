@@ -32,30 +32,50 @@ router.post('/add', async (req, res) => {
 
 // 선박 좌석 수정 요청 처리
 router.post('/update/:id', async (req, res) => {
-    const { id } = req.params;
-    const { name, eco, biz, first } = req.body;
-  
-    try {
-      const ship = await Ship.findById(id);
-      if (!ship) return res.status(404).json({ success: false, message: 'Ship not found.' });
-  
-      // 수정된 데이터 업데이트
-      if (name !== undefined) ship.name = name.trim();
-      if (eco !== undefined) ship.eco = parseInt(eco) || 0;
-      if (biz !== undefined) ship.biz = parseInt(biz) || 0;
-      if (first !== undefined) ship.first = parseInt(first) || 0;
-  
-      ship.total = ship.eco + ship.biz + ship.first; // 총 좌석 재계산
-  
-      await ship.save();
-  
-      res.json({ success: true });
-    } catch (error) {
-      console.error('Error updating ship:', error);
-      res.status(500).json({ success: false, message: 'Error updating ship.' });
+  const { id } = req.params;
+  const { name, eco, biz, first } = req.body;
+
+  try {
+    const ship = await Ship.findById(id);
+    if (!ship) return res.status(404).json({ success: false, message: 'Ship not found.' });
+
+    // 수정된 데이터 업데이트
+    if (name !== undefined) ship.name = name.trim();
+    if (eco !== undefined) ship.eco = parseInt(eco) || 0;
+    if (biz !== undefined) ship.biz = parseInt(biz) || 0;
+    if (first !== undefined) ship.first = parseInt(first) || 0;
+
+    ship.total = ship.eco + ship.biz + ship.first; // 총 좌석 재계산
+
+    await ship.save();
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error updating ship:', error);
+    res.status(500).json({ success: false, message: 'Error updating ship.' });
+  }
+});
+
+// 선박 블럭 수정 및 저장 요청 처리
+router.post('/save-block-data', async (req, res) => {
+  const updatedShips = req.body;
+
+  try {
+    for (const updatedShip of updatedShips) {
+      const ship = await Ship.findById(updatedShip.id);
+      if (ship) {
+        Object.assign(ship, updatedShip); // 요청 데이터로 업데이트
+        ship.total = parseInt(ship.eco || 0) + parseInt(ship.biz || 0) + parseInt(ship.first || 0); // 총 좌석 재계산
+        await ship.save();
+      }
     }
-  });
-  
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error saving block data:', error);
+    res.status(500).json({ success: false, message: 'Error saving block data.' });
+  }
+});
 
 // 선박 삭제 요청 처리
 router.delete('/delete/:id', async (req, res) => {

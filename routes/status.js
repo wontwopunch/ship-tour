@@ -62,7 +62,8 @@ router.get('/monthly', async (req, res) => {
         }
       });
   
-      data.push(...dateMap.values());
+      data.push(...Array.from(dateMap.values()).sort((a, b) => new Date(a.date) - new Date(b.date)));
+
   
       res.render('monthly-status', {
         data,
@@ -111,7 +112,7 @@ router.get('/monthly/export', async (req, res) => {
     reservations.forEach((reservation) => {
       const departureDate = reservation.departureDate?.toISOString().split('T')[0];
       if (departureDate) {
-        sheet.addRow({
+        rows.push({
           date: departureDate,
           economySeats: reservation.economySeats || 0,
           businessSeats: reservation.businessSeats || 0,
@@ -125,6 +126,7 @@ router.get('/monthly/export', async (req, res) => {
         });
       }
     });
+    rows.sort((a, b) => new Date(a.date) - new Date(b.date)); // 추가된 정렬
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', 'attachment; filename="monthly_status.xlsx"');

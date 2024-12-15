@@ -51,6 +51,7 @@
               <%= row.date %> 
               (<%= ['일', '월', '화', '수', '목', '금', '토'][new Date(row.date).getDay()] %>)
             </td>
+        
             <!-- 포항출항 -->
             <td><%= row.departure.economy || 0 %></td>
             <td><%= row.departure.business || 0 %></td>
@@ -58,9 +59,16 @@
             <td><%= row.departure.ecoBlock || 0 %></td>
             <td><%= row.departure.bizBlock || 0 %></td>
             <td><%= row.departure.firstBlock || 0 %></td>
-            <td><%= (row.departure.ecoBlock || 0) - (row.departure.economy || 0) %></td>
-            <td><%= (row.departure.bizBlock || 0) - (row.departure.business || 0) %></td>
-            <td><%= (row.departure.firstBlock || 0) - (row.departure.first || 0) %></td>
+            <td style="color: <%= ((row.departure.ecoBlock || 0) - (row.departure.economy || 0)) < 0 ? 'red' : 'inherit' %>;">
+              <%= (row.departure.ecoBlock || 0) - (row.departure.economy || 0) %>
+            </td>
+            <td style="color: <%= ((row.departure.bizBlock || 0) - (row.departure.business || 0)) < 0 ? 'red' : 'inherit' %>;">
+              <%= (row.departure.bizBlock || 0) - (row.departure.business || 0) %>
+            </td>
+            <td style="color: <%= ((row.departure.firstBlock || 0) - (row.departure.first || 0)) < 0 ? 'red' : 'inherit' %>;">
+              <%= (row.departure.firstBlock || 0) - (row.departure.first || 0) %>
+            </td>
+        
             <!-- 울릉출항 -->
             <td><%= row.arrival.economy || 0 %></td>
             <td><%= row.arrival.business || 0 %></td>
@@ -68,11 +76,18 @@
             <td><%= row.arrival.ecoBlock || 0 %></td>
             <td><%= row.arrival.bizBlock || 0 %></td>
             <td><%= row.arrival.firstBlock || 0 %></td>
-            <td><%= (row.arrival.ecoBlock || 0) - (row.arrival.economy || 0) %></td>
-            <td><%= (row.arrival.bizBlock || 0) - (row.arrival.business || 0) %></td>
-            <td><%= (row.arrival.firstBlock || 0) - (row.arrival.first || 0) %></td>
+            <td style="color: <%= ((row.arrival.ecoBlock || 0) - (row.arrival.economy || 0)) < 0 ? 'red' : 'inherit' %>;">
+              <%= (row.arrival.ecoBlock || 0) - (row.arrival.economy || 0) %>
+            </td>
+            <td style="color: <%= ((row.arrival.bizBlock || 0) - (row.arrival.business || 0)) < 0 ? 'red' : 'inherit' %>;">
+              <%= (row.arrival.bizBlock || 0) - (row.arrival.business || 0) %>
+            </td>
+            <td style="color: <%= ((row.arrival.firstBlock || 0) - (row.arrival.first || 0)) < 0 ? 'red' : 'inherit' %>;">
+              <%= (row.arrival.firstBlock || 0) - (row.arrival.first || 0) %>
+            </td>
           </tr>
         <% }); %>
+        
       </tbody>
     </table>
   </div>

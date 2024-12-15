@@ -14,6 +14,9 @@
     <button onclick="saveChanges()">저장</button>
   </div>
 
+  <label for="reservedByFilter">예약자 검색:</label>
+  <input type="text" id="reservedByFilter" placeholder="예약자명 입력" oninput="filterByReservedBy()">
+
   <!-- 월별 필터링 -->
   <label for="monthFilter">월 선택:</label>
   <select id="monthFilter" onchange="filterByMonth()">
@@ -348,9 +351,9 @@
     
     function calculateRow(row) {
       const getValue = (field) => {
-        const cell = row.querySelector(`[data-field="${field}"]`);
-        if (!cell) return 0;
-        return parseFloat(cell.innerText.replace(/,/g, '').trim()) || 0;
+       const cell = row.querySelector(`[data-field="${field}"]`);
+       if (!cell) return 0;
+       return parseFloat(cell.innerText.replace(/,/g, '').trim()) || 0;
       };
 
       const totalPrice = getValue('totalPrice');
@@ -368,11 +371,12 @@
       const balanceCell = row.querySelector('[data-field="balance"]');
       setFormattedValue(balanceCell, balance);
 
-      // 총 정산비 계산
-      const totalSettlement = 
-        departureFee + arrivalFee + dokdoFee + restaurantFee + eventFee + otherFee - refund;
+      // 총 정산비 계산식 수정
+      const totalSettlement = departureFee + arrivalFee + dokdoFee + restaurantFee + eventFee + otherFee - refund; // 수정됨
       const totalSettlementCell = row.querySelector('[data-field="totalSettlement"]');
       setFormattedValue(totalSettlementCell, totalSettlement);
+
+      return totalSettlement; // 반환 값 포함
 
       // 수익 계산
       const profit = totalPrice - totalSettlement;
@@ -489,6 +493,28 @@
     // 초기 계산
     calculateTotalProfit();
   });
+
+  // 총금액/계약금/잔액 더블클릭 시 바탕색 노란색으로 표시
+  document.addEventListener('dblclick', (e) => {
+    const cell = e.target.closest('[data-field="totalPrice"], [data-field="deposit"], [data-field="balance"]');
+    if (cell) {
+      cell.style.backgroundColor = 'yellow'; // 바탕색 변경
+      setTimeout(() => {
+        cell.style.backgroundColor = ''; // 일정 시간 후 원래 색으로 복원
+      }, 2000);
+    }
+  });
+
+  // 예약자명 검색 기능 추가
+  function filterByReservedBy() {
+    const filterInput = document.getElementById('reservedByFilter').value.trim().toLowerCase();
+    const rows = document.querySelectorAll('#reservationTable tbody tr');
+
+    rows.forEach((row) => {
+      const reservedBy = row.querySelector('[data-field="reservedBy"]').innerText.trim().toLowerCase();
+      row.style.display = reservedBy.includes(filterInput) ? '' : 'none'; // 필터 적용
+    });
+  }
 
   function exportToExcel() {
     window.location.href = '/reservation/export';
