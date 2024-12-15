@@ -128,44 +128,56 @@
     });
   });
 
-function saveBlockData() {
-  const rows = document.querySelectorAll('tbody tr');
-  const updates = [];
+  function saveBlockData() {
+    const rows = document.querySelectorAll('tbody tr');
+    const updates = [];
 
-  rows.forEach((row) => {
-    const id = row.getAttribute('data-id');
-    if (id) {
-      updates.push({
-        _id: id,
-        'departure.ecoBlock': row.querySelector('[data-field="departure.ecoBlock"]').value || 0,
-        'departure.bizBlock': row.querySelector('[data-field="departure.bizBlock"]').value || 0,
-        'departure.firstBlock': row.querySelector('[data-field="departure.firstBlock"]').value || 0,
-        'arrival.ecoBlock': row.querySelector('[data-field="arrival.ecoBlock"]').value || 0,
-        'arrival.bizBlock': row.querySelector('[data-field="arrival.bizBlock"]').value || 0,
-        'arrival.firstBlock': row.querySelector('[data-field="arrival.firstBlock"]').value || 0,
-      });
-    }
-  });
+    rows.forEach((row) => {
+      const id = row.getAttribute('data-id');
+      if (id) {
+        const departureEcoBlock = parseInt(row.querySelector('[data-field="departure.ecoBlock"]').value, 10) || 0;
+        const departureBizBlock = parseInt(row.querySelector('[data-field="departure.bizBlock"]').value, 10) || 0;
+        const departureFirstBlock = parseInt(row.querySelector('[data-field="departure.firstBlock"]').value, 10) || 0;
 
-  fetch('/status/monthly/update-block', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ updates }),
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      if (data.success) {
-        alert('블럭 데이터가 저장되었습니다.');
-        location.reload();
-      } else {
-        alert('블럭 데이터 저장 중 오류가 발생했습니다.');
+        const arrivalEcoBlock = parseInt(row.querySelector('[data-field="arrival.ecoBlock"]').value, 10) || 0;
+        const arrivalBizBlock = parseInt(row.querySelector('[data-field="arrival.bizBlock"]').value, 10) || 0;
+        const arrivalFirstBlock = parseInt(row.querySelector('[data-field="arrival.firstBlock"]').value, 10) || 0;
+
+        updates.push({
+          _id: id,
+          departure: {
+            ecoBlock: departureEcoBlock,
+            bizBlock: departureBizBlock,
+            firstBlock: departureFirstBlock,
+          },
+          arrival: {
+            ecoBlock: arrivalEcoBlock,
+            bizBlock: arrivalBizBlock,
+            firstBlock: arrivalFirstBlock,
+          },
+        });
       }
-    })
-    .catch((error) => {
-      console.error('Error saving block data:', error);
-      alert('블럭 데이터 저장 중 오류가 발생했습니다.');
     });
-}
+
+    fetch('/status/monthly/update-block', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ updates }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          alert('블록 데이터가 성공적으로 저장되었습니다.');
+          location.reload();
+        } else {
+          alert('블록 데이터 저장 중 오류가 발생했습니다.');
+        }
+      })
+      .catch((error) => {
+        console.error('블록 데이터 저장 중 오류:', error);
+        alert('블록 데이터 저장 중 오류가 발생했습니다.');
+      });
+  }
 
 </script>
 

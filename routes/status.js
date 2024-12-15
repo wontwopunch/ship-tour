@@ -99,18 +99,46 @@ router.post('/monthly/update-block', async (req, res) => {
 
   try {
     for (const update of updates) {
-      const reservation = await Reservation.findById(update._id);
-      if (reservation) {
-        Object.assign(reservation, update); // 업데이트 데이터 병합
-        await reservation.save();
+      const { _id, departure, arrival } = update;
+
+      // 예약 데이터 가져오기
+      const reservation = await Reservation.findById(_id);
+      if (!reservation) {
+        continue;
       }
+
+      // 출항 블록 업데이트
+      if (departure) {
+        reservation.ship.eco = departure.ecoBlock || reservation.ship.eco;
+        reservation.ship.biz = departure.bizBlock || reservation.ship.biz;
+        reservation.ship.first = departure.firstBlock || reservation.ship.first;
+      }
+
+      // 도착 블록 업데이트
+      if (arrival) {
+        reservation.ship.eco = arrival.ecoBlock || reservation.ship.eco;
+        reservation.ship.biz = arrival.bizBlock || reservation.ship.biz;
+        reservation.ship.first = arrival.firstBlock || reservation.ship.first;
+      }
+
+      // 잔여 좌석 계산
+      reservation.remainingEconomySeats =
+        reservation.ship.eco - (reservation.economySeats || 0);
+      reservation.remainingBusinessSeats =
+        reservation.ship.biz - (reservation.businessSeats || 0);
+      reservation.remainingFirstSeats =
+        reservation.ship.first - (reservation.firstSeats || 0);
+
+      await reservation.save();
     }
+
     res.json({ success: true, message: 'Block data updated successfully' });
   } catch (error) {
     console.error('Error updating block data:', error);
     res.status(500).json({ success: false, message: 'Error updating block data' });
   }
 });
+
 
   
 // 엑셀 다운로드

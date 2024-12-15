@@ -293,8 +293,6 @@
       });
   }
 
-
-
   function filterByMonth() {
     const month = document.getElementById('monthFilter').value;
     window.location.href = `/reservation/monthly?month=${month}`;
@@ -404,21 +402,25 @@
       // const profitCell = row.querySelector('[data-field="profit"]');
       // setFormattedValue(profitCell, profit);
 
+      // 잔금 계산
       const balance = totalPrice - deposit;
-      const totalSettlement = departureFee + arrivalFee + dokdoFee + restaurantFee + eventFee + otherFee - refund;
-      const profit = totalPrice - totalSettlement;
-
       setValue('balance', balance);
+
+      // 총 정산비 계산
+      const totalSettlement = departureFee + arrivalFee + dokdoFee + restaurantFee + eventFee + otherFee - refund;
       setValue('totalSettlement', totalSettlement);
-      setValue('profit', profit); 
+
+      // 수익 계산
+      const profit = totalPrice - totalSettlement;
+      setValue('profit', profit);
 
       return profit;
     }
 
     function calculateTotalProfit() {
       const rows = Array.from(document.querySelectorAll('#reservationTable tbody tr'));
-    const totalProfit = rows.reduce((sum, row) => sum + calculateRow(row), 0);
-    document.getElementById('totalProfit').innerText = `총 수익: ${totalProfit.toLocaleString('en-US')} 원`;
+      const totalProfit = rows.reduce((sum, row) => sum + calculateRow(row), 0);
+      document.getElementById('totalProfit').innerText = `총 수익: ${totalProfit.toLocaleString('en-US')} 원`;
     }
 
     // 한글 입력 완료 이벤트
