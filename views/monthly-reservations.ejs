@@ -125,6 +125,8 @@
 <script>
   const ships = <%- JSON.stringify(ships) %>;
 
+  const highlightedCells = new Set();
+
   function getCaretPosition(element) {
     const selection = window.getSelection();
     if (selection.rangeCount > 0) {
@@ -222,6 +224,7 @@
           'departureFee', 'arrivalFee', 'dokdoFee', 'restaurantFee',
           'eventFee', 'otherFee', 'refund', 'totalSettlement', 'profit',
         ];
+
         if (index < headers.length) {
           const selectElement = cell.querySelector('select');
           const inputElement = cell.querySelector('input');
@@ -237,13 +240,18 @@
               'totalSeats', 'economySeats', 'businessSeats', 'firstSeats',
               'dokdoTourPeople', 'totalPrice', 'deposit', 'balance',
               'departureFee', 'arrivalFee', 'dokdoFee', 'restaurantFee',
-              'eventFee', 'otherFee', 'refund', 'totalSettlement', 'profit'
+              'eventFee', 'otherFee', 'refund', 'totalSettlement', 'profit',
             ];
             if (numericFields.includes(fieldName)) {
               acc[fieldName] = parseFloat(value.replace(/,/g, '')) || 0;
             } else {
               acc[fieldName] = value;
             }
+          }
+
+          // 하이라이트 상태 추가
+          if (highlightedCells.has(`${id}:${fieldName}`)) {
+            acc[`${fieldName}_highlighted`] = true;
           }
         }
         return acc;
@@ -258,28 +266,34 @@
     });
 
     Promise.all([
-      updatedData.length > 0 ? 
-        fetch('/reservation/bulk-update', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updatedData),
-        }) : Promise.resolve(),
-      newData.length > 0 ?
-        fetch('/reservation/add-bulk', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newData),
-        }) : Promise.resolve()
-    ]).then(() => {
-      alert('저장되었습니다.');
-      if (newData.length > 0) {
-        location.reload();
-      }
-    }).catch(error => {
-      console.error('저장 중 오류:', error);
-      alert('저장 중 오류가 발생했습니다.');
-    });
+      updatedData.length > 0
+        ? fetch('/reservation/bulk-update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedData),
+          })
+        : Promise.resolve(),
+      newData.length > 0
+        ? fetch('/reservation/add-bulk', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newData),
+          })
+        : Promise.resolve(),
+    ])
+      .then(() => {
+        alert('저장되었습니다.');
+        if (newData.length > 0) {
+          location.reload();
+        }
+      })
+      .catch((error) => {
+        console.error('저장 중 오류:', error);
+        alert('저장 중 오류가 발생했습니다.');
+      });
   }
+
+
 
   function filterByMonth() {
     const month = document.getElementById('monthFilter').value;
@@ -336,11 +350,10 @@
 
   function deleteRow(id) {
     if (!confirm('이 행을 삭제하시겠습니까?')) return;
-
     if (id) {
       fetch(`/reservation/delete/${id}`, { method: 'DELETE' })
-        .then(response => response.json())
-        .then(data => {
+        .then((response) => response.json())
+        .then((data) => {
           if (data.success) location.reload();
         });
     } else {
@@ -356,9 +369,13 @@
     function calculateRow(row) {
       const getValue = (field) => {
        const cell = row.querySelector(`[data-field="${field}"]`);
-       if (!cell) return 0;
-       return parseFloat(cell.innerText.replace(/,/g, '').trim()) || 0;
+       return cell ? parseFloat(cell.innerText.replace(/,/g, '').trim()) || 0 : 0;
       };
+
+    const setValue = (field, value) => {
+      const cell = row.querySelector(`[data-field="${field}"]`);
+      if (cell) setFormattedValue(cell, value);
+    };
 
       const totalPrice = getValue('totalPrice');
       const deposit = getValue('deposit');
@@ -370,30 +387,38 @@
       const otherFee = getValue('otherFee');
       const refund = getValue('refund');
 
-      // 잔금 계산
-      const balance = Math.floor(totalPrice - deposit);
-      const balanceCell = row.querySelector('[data-field="balance"]');
-      setFormattedValue(balanceCell, balance);
+      // // 잔금 계산
+      // const balance = Math.floor(totalPrice - deposit);
+      // const balanceCell = row.querySelector('[data-field="balance"]');
+      // setFormattedValue(balanceCell, balance);
 
-      // 총 정산비 계산식 수정
-      const totalSettlement = departureFee + arrivalFee + dokdoFee + restaurantFee + eventFee + otherFee - refund; // 수정됨
-      const totalSettlementCell = row.querySelector('[data-field="totalSettlement"]');
-      setFormattedValue(totalSettlementCell, totalSettlement);
+      // // 총 정산비 계산식 수정
+      // const totalSettlement = departureFee + arrivalFee + dokdoFee + restaurantFee + eventFee + otherFee - refund; // 수정됨
+      // const totalSettlementCell = row.querySelector('[data-field="totalSettlement"]');
+      // setFormattedValue(totalSettlementCell, totalSettlement);
 
-      return totalSettlement; // 반환 값 포함
+      // return totalSettlement; // 반환 값 포함
 
-      // 수익 계산
+      // // 수익 계산
+      // const profit = totalPrice - totalSettlement;
+      // const profitCell = row.querySelector('[data-field="profit"]');
+      // setFormattedValue(profitCell, profit);
+
+      const balance = totalPrice - deposit;
+      const totalSettlement = departureFee + arrivalFee + dokdoFee + restaurantFee + eventFee + otherFee - refund;
       const profit = totalPrice - totalSettlement;
-      const profitCell = row.querySelector('[data-field="profit"]');
-      setFormattedValue(profitCell, profit);
+
+      setValue('balance', balance);
+      setValue('totalSettlement', totalSettlement);
+      setValue('profit', profit); 
 
       return profit;
     }
 
     function calculateTotalProfit() {
-      const rows = Array.from(tableBody.rows);
-      const totalProfit = rows.reduce((sum, row) => sum + calculateRow(row), 0);
-      totalProfitElement.innerText = `총 수익: ${totalProfit.toLocaleString('en-US')} 원`;
+      const rows = Array.from(document.querySelectorAll('#reservationTable tbody tr'));
+    const totalProfit = rows.reduce((sum, row) => sum + calculateRow(row), 0);
+    document.getElementById('totalProfit').innerText = `총 수익: ${totalProfit.toLocaleString('en-US')} 원`;
     }
 
     // 한글 입력 완료 이벤트
@@ -500,13 +525,30 @@
 
   // 총금액/계약금/잔액 더블클릭 시 바탕색 노란색으로 표시
   document.addEventListener('dblclick', (e) => {
-    const cell = e.target.closest('[data-field="totalPrice"], [data-field="deposit"], [data-field="balance"]');
+    const cell = e.target.closest('[data-field]');
     if (cell) {
-      cell.style.backgroundColor = 'yellow'; // 바탕색 변경
-      setTimeout(() => {
-        cell.style.backgroundColor = ''; // 일정 시간 후 원래 색으로 복원
-      }, 2000);
+      cell.style.backgroundColor = 'yellow'; // 하이라이트
+      const rowId = cell.closest('tr').getAttribute('data-id');
+      const field = cell.getAttribute('data-field');
+
+      if (rowId && field) {
+        highlightedCells.add(`${rowId}:${field}`); // 셀 상태 저장
+      }
     }
+  });
+
+  // 저장 후 하이라이트 복원
+  document.addEventListener('DOMContentLoaded', () => {
+    const rows = document.querySelectorAll('#reservationTable tbody tr');
+    rows.forEach((row) => {
+      const rowId = row.getAttribute('data-id');
+      row.querySelectorAll('[data-field]').forEach((cell) => {
+        const field = cell.getAttribute('data-field');
+        if (highlightedCells.has(`${rowId}:${field}`)) {
+          cell.style.backgroundColor = 'yellow'; // 저장된 하이라이트 복원
+        }
+      });
+    });
   });
 
   // 예약자명 검색 기능 추가
