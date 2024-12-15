@@ -6,74 +6,60 @@ const Ship = require('../models/Ship');
 
 // 월별 현황
 router.get('/monthly', async (req, res) => {
-    const { month } = req.query; // reservedBy 제거
-    const currentMonth = parseInt(month, 10) || new Date().getMonth() + 1;
-  
-    try {
-      const startDate = new Date(`2024-${currentMonth}-01`);
-      const endDate = new Date(`2024-${currentMonth}-31`);
-  
-      const filter = {
-        $or: [
-          { departureDate: { $gte: startDate, $lt: endDate } },
-          { arrivalDate: { $gte: startDate, $lt: endDate } },
-        ],
-      };
-  
-      // 예약 데이터 가져오기
-      const reservations = await Reservation.find(filter).populate('ship');
-  
-      // 데이터 처리
-      const data = [];
-      const dateMap = new Map();
-  
-      reservations.forEach((reservation) => {
-        const departureDate = reservation.departureDate?.toISOString().split('T')[0];
-        const arrivalDate = reservation.arrivalDate?.toISOString().split('T')[0];
-  
-        if (departureDate) {
-          if (!dateMap.has(departureDate)) {
-            dateMap.set(departureDate, { date: departureDate, departure: {}, arrival: {} });
-          }
-          const record = dateMap.get(departureDate);
-          record.departure = {
-            economy: (record.departure.economy || 0) + reservation.economySeats,
-            business: (record.departure.business || 0) + reservation.businessSeats,
-            first: (record.departure.first || 0) + reservation.firstSeats,
-            ecoBlock: reservation.ship?.eco || 0,
-            bizBlock: reservation.ship?.biz || 0,
-            firstBlock: reservation.ship?.first || 0,
-          };
-        }
-  
-        if (arrivalDate) {
-          if (!dateMap.has(arrivalDate)) {
-            dateMap.set(arrivalDate, { date: arrivalDate, departure: {}, arrival: {} });
-          }
-          const record = dateMap.get(arrivalDate);
-          record.arrival = {
-            economy: (record.arrival.economy || 0) + reservation.economySeats,
-            business: (record.arrival.business || 0) + reservation.businessSeats,
-            first: (record.arrival.first || 0) + reservation.firstSeats,
-            ecoBlock: reservation.ship?.eco || 0,
-            bizBlock: reservation.ship?.biz || 0,
-            firstBlock: reservation.ship?.first || 0,
-          };
-        }
-      });
-  
-      data.push(...Array.from(dateMap.values()).sort((a, b) => new Date(a.date) - new Date(b.date)));
+  const { month } = req.query;
+  const currentMonth = parseInt(month, 10) || new Date().getMonth() + 1;
 
-  
-      res.render('monthly-status', {
-        data,
-        currentMonth, // reservedBy 제거
-      });
-    } catch (error) {
-      console.error('Error fetching monthly status:', error.message);
-      res.status(400).send(error.message);
-    }
-  });
+  try {
+    const startDate = new Date(`2024-${currentMonth}-01`);
+    const endDate = new Date(new Date(`2024-${currentMonth + 1}-01`) - 1);
+
+    const filter = {
+      $or: [
+        { departureDate: { $gte: startDate, $lt: endDate } },
+        { arrivalDate: { $gte: startDate, $lt: endDate } },
+      ],
+    };
+
+    const reservations = await Reservation.find(filter).populate('ship');
+
+    const data = [];
+    const dateMap = new Map();
+
+    reservations.forEach((reservation) => {
+      const departureDate = reservation.departureDate?.toISOString().split('T')[0];
+      const arrivalDate = reservation.arrivalDate?.toISOString().split('T')[0];
+
+      if (departureDate && isValidDate(departureDate)) {
+        if (!dateMap.has(departureDate)) {
+          dateMap.set(departureDate, { date: departureDate, departure: {}, arrival: {} });
+        }
+        processReservation(dateMap.get(departureDate), reservation, 'departure');
+      }
+
+      if (arrivalDate && isValidDate(arrivalDate)) {
+        if (!dateMap.has(arrivalDate)) {
+          dateMap.set(arrivalDate, { date: arrivalDate, departure: {}, arrival: {} });
+        }
+        processReservation(dateMap.get(arrivalDate), reservation, 'arrival');
+      }
+    });
+
+    data.push(...Array.from(dateMap.values()).sort((a, b) => new Date(a.date) - new Date(b.date)));
+
+    res.render('monthly-status', {
+      data,
+      currentMonth,
+    });
+  } catch (error) {
+    console.error({
+      message: 'Error fetching monthly status',
+      error: error.message,
+      stack: error.stack,
+    });
+    res.status(500).send('Error fetching monthly status');
+  }
+});
+
   
 router.post('/update-block', async (req, res) => {
     const { date, type, key, value } = req.body;
