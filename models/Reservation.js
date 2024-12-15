@@ -72,6 +72,23 @@ const reservationSchema = new mongoose.Schema(
         return this.totalPrice - this.totalSettlement;
       },
     },
+
+    // 날짜별 블럭 좌석 정보
+    dailyBlocks: [
+      {
+        date: { type: Date, required: true },
+        departure: {
+          ecoBlock: { type: Number, default: 0 }, // 포항 출항 이코노미 좌석
+          bizBlock: { type: Number, default: 0 }, // 포항 출항 비즈니스 좌석
+          firstBlock: { type: Number, default: 0 }, // 포항 출항 퍼스트 좌석
+        },
+        arrival: {
+          ecoBlock: { type: Number, default: 0 }, // 울릉 출항 이코노미 좌석
+          bizBlock: { type: Number, default: 0 }, // 울릉 출항 비즈니스 좌석
+          firstBlock: { type: Number, default: 0 }, // 울릉 출항 퍼스트 좌석
+        },
+      },
+    ],
   },
   { timestamps: true }
 );
