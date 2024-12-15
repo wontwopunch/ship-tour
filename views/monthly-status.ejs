@@ -133,19 +133,20 @@
     const updates = [];
 
     rows.forEach((row) => {
-      const date = row.querySelector('td:first-child').innerText.trim();
+      const date = row.querySelector('td:first-child')?.innerText.trim();
+      if (!date) return; // Skip if no date found
 
       updates.push({
         date,
         departure: {
-          ecoBlock: parseInt(row.querySelector('[data-field="departure.ecoBlock"]').value || 0, 10),
-          bizBlock: parseInt(row.querySelector('[data-field="departure.bizBlock"]').value || 0, 10),
-          firstBlock: parseInt(row.querySelector('[data-field="departure.firstBlock"]').value || 0, 10),
+          ecoBlock: parseInt(row.querySelector('[data-field="departure.ecoBlock"]')?.value || 0, 10),
+          bizBlock: parseInt(row.querySelector('[data-field="departure.bizBlock"]')?.value || 0, 10),
+          firstBlock: parseInt(row.querySelector('[data-field="departure.firstBlock"]')?.value || 0, 10),
         },
         arrival: {
-          ecoBlock: parseInt(row.querySelector('[data-field="arrival.ecoBlock"]').value || 0, 10),
-          bizBlock: parseInt(row.querySelector('[data-field="arrival.bizBlock"]').value || 0, 10),
-          firstBlock: parseInt(row.querySelector('[data-field="arrival.firstBlock"]').value || 0, 10),
+          ecoBlock: parseInt(row.querySelector('[data-field="arrival.ecoBlock"]')?.value || 0, 10),
+          bizBlock: parseInt(row.querySelector('[data-field="arrival.bizBlock"]')?.value || 0, 10),
+          firstBlock: parseInt(row.querySelector('[data-field="arrival.firstBlock"]')?.value || 0, 10),
         },
       });
     });
@@ -155,11 +156,14 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ updates }),
     })
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) throw new Error('Failed to update block data');
+        return response.json();
+      })
       .then((data) => {
         if (data.success) {
           alert('블럭 데이터가 저장되었습니다.');
-          location.reload(); // 새로고침으로 반영
+          location.reload();
         } else {
           alert('블럭 데이터 저장 중 오류가 발생했습니다.');
         }
@@ -170,27 +174,51 @@
       });
   }
 
+
   function calculateRemainingSeats(row) {
-    const ecoBlock = parseInt(row.querySelector('[data-field="departure.ecoBlock"]').value || 0, 10);
-    const bizBlock = parseInt(row.querySelector('[data-field="departure.bizBlock"]').value || 0, 10);
-    const firstBlock = parseInt(row.querySelector('[data-field="departure.firstBlock"]').value || 0, 10);
+    // Safely fetch all required elements
+    const ecoBlockInput = row.querySelector('[data-field="departure.ecoBlock"]');
+    const bizBlockInput = row.querySelector('[data-field="departure.bizBlock"]');
+    const firstBlockInput = row.querySelector('[data-field="departure.firstBlock"]');
 
-    const economySeats = parseInt(row.querySelector('[data-field="departure.economy"]').innerText || 0, 10);
-    const businessSeats = parseInt(row.querySelector('[data-field="departure.business"]').innerText || 0, 10);
-    const firstSeats = parseInt(row.querySelector('[data-field="departure.first"]').innerText || 0, 10);
+    const economySeatsCell = row.querySelector('[data-field="departure.economy"]');
+    const businessSeatsCell = row.querySelector('[data-field="departure.business"]');
+    const firstSeatsCell = row.querySelector('[data-field="departure.first"]');
 
-    row.querySelector('[data-field="departure.remainingEco"]').innerText = ecoBlock - economySeats;
-    row.querySelector('[data-field="departure.remainingBiz"]').innerText = bizBlock - businessSeats;
-    row.querySelector('[data-field="departure.remainingFirst"]').innerText = firstBlock - firstSeats;
+    const remainingEcoCell = row.querySelector('[data-field="departure.remainingEco"]');
+    const remainingBizCell = row.querySelector('[data-field="departure.remainingBiz"]');
+    const remainingFirstCell = row.querySelector('[data-field="departure.remainingFirst"]');
+
+    if (
+      !ecoBlockInput ||
+      !bizBlockInput ||
+      !firstBlockInput ||
+      !economySeatsCell ||
+      !businessSeatsCell ||
+      !firstSeatsCell ||
+      !remainingEcoCell ||
+      !remainingBizCell ||
+      !remainingFirstCell
+    ) {
+      console.error('One or more required elements are missing in calculateRemainingSeats.');
+      return; // Exit the function to prevent further errors
+    }
+
+    // Perform calculations
+    const ecoBlock = parseInt(ecoBlockInput.value || 0, 10);
+    const bizBlock = parseInt(bizBlockInput.value || 0, 10);
+    const firstBlock = parseInt(firstBlockInput.value || 0, 10);
+
+    const economySeats = parseInt(economySeatsCell.innerText || 0, 10);
+    const businessSeats = parseInt(businessSeatsCell.innerText || 0, 10);
+    const firstSeats = parseInt(firstSeatsCell.innerText || 0, 10);
+
+    // Update remaining seats
+    remainingEcoCell.innerText = ecoBlock - economySeats;
+    remainingBizCell.innerText = bizBlock - businessSeats;
+    remainingFirstCell.innerText = firstBlock - firstSeats;
   }
 
-  // 이벤트 리스너로 실시간 잔여 좌석 업데이트
-  document.querySelectorAll('input[data-field]').forEach((input) => {
-    input.addEventListener('input', (e) => {
-      const row = e.target.closest('tr');
-      calculateRemainingSeats(row);
-    });
-  });
 
 
 </script>

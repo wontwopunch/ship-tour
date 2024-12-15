@@ -95,57 +95,49 @@ router.post('/update-block', async (req, res) => {
 
 // 블럭 수 업데이트
 router.post('/monthly/update-block', async (req, res) => {
-  const { updates } = req.body; // updates: [{ date, departure: { ecoBlock, bizBlock, firstBlock }, arrival: { ... } }]
+  const { updates } = req.body;
+
+  if (!updates || !Array.isArray(updates)) {
+    return res.status(400).json({ success: false, message: 'Invalid input data' });
+  }
 
   try {
     for (const update of updates) {
       const { date, departure, arrival } = update;
 
-      // 예약 데이터를 날짜 기준으로 가져옴
+      if (!date) {
+        console.warn('Update skipped due to missing date:', update);
+        continue;
+      }
+
       const reservations = await Reservation.find({
         $or: [{ departureDate: date }, { arrivalDate: date }],
       });
 
       for (const reservation of reservations) {
-        // 블럭 좌석 데이터 업데이트
         if (departure) {
           reservation.departureEcoBlock = departure.ecoBlock || 0;
           reservation.departureBizBlock = departure.bizBlock || 0;
           reservation.departureFirstBlock = departure.firstBlock || 0;
-
-          // 잔여 좌석 계산
-          reservation.remainingEconomySeats =
-            reservation.departureEcoBlock - reservation.economySeats;
-          reservation.remainingBusinessSeats =
-            reservation.departureBizBlock - reservation.businessSeats;
-          reservation.remainingFirstSeats =
-            reservation.departureFirstBlock - reservation.firstSeats;
         }
 
         if (arrival) {
           reservation.arrivalEcoBlock = arrival.ecoBlock || 0;
           reservation.arrivalBizBlock = arrival.bizBlock || 0;
           reservation.arrivalFirstBlock = arrival.firstBlock || 0;
-
-          // 잔여 좌석 계산
-          reservation.remainingEconomySeats =
-            reservation.arrivalEcoBlock - reservation.economySeats;
-          reservation.remainingBusinessSeats =
-            reservation.arrivalBizBlock - reservation.businessSeats;
-          reservation.remainingFirstSeats =
-            reservation.arrivalFirstBlock - reservation.firstSeats;
         }
 
-        await reservation.save(); // 변경사항 저장
+        await reservation.save();
       }
     }
 
-    res.json({ success: true, message: '블럭 데이터가 저장되었습니다.' });
+    res.json({ success: true, message: 'Block data updated successfully' });
   } catch (error) {
     console.error('Error updating block data:', error);
-    res.status(500).json({ success: false, message: '블럭 데이터 저장 중 오류' });
+    res.status(500).json({ success: false, message: 'Server error while updating block data' });
   }
 });
+
 
 
 
