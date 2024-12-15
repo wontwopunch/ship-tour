@@ -106,23 +106,20 @@ router.post('/monthly/update-block', async (req, res) => {
       const { date, departure, arrival } = update;
 
       if (!date) {
-        console.warn('Update skipped due to missing date:', update);
+        console.warn('Skipping update due to missing date:', update);
         continue;
       }
 
-      // 해당 날짜의 블럭 데이터를 업데이트하거나 새로 추가
       const reservation = await Reservation.findOne({
         $or: [{ departureDate: date }, { arrivalDate: date }],
       });
 
       if (reservation) {
-        // `dailyBlocks`에서 해당 날짜 찾기
         const existingBlock = reservation.dailyBlocks.find(
           (block) => block.date.toISOString().split('T')[0] === date
         );
 
         if (existingBlock) {
-          // 기존 블럭 데이터 업데이트
           if (departure) {
             existingBlock.departure.ecoBlock = departure.ecoBlock || 0;
             existingBlock.departure.bizBlock = departure.bizBlock || 0;
@@ -135,7 +132,6 @@ router.post('/monthly/update-block', async (req, res) => {
             existingBlock.arrival.firstBlock = arrival.firstBlock || 0;
           }
         } else {
-          // 새 블럭 데이터 추가
           reservation.dailyBlocks.push({
             date,
             departure: {
@@ -163,8 +159,6 @@ router.post('/monthly/update-block', async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error while updating block data' });
   }
 });
-
-
 
 // 엑셀 다운로드
 router.get('/monthly/export', async (req, res) => {

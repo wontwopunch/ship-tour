@@ -53,9 +53,9 @@
             </td>
         
             <!-- 포항출항 -->
-            <td style="background-color: #d7fbe8;"><%= row.departure.economy || 0 %></td>
-            <td style="background-color: #d7fbe8;"><%= row.departure.business || 0 %></td>
-            <td style="background-color: #d7fbe8;"><%= row.departure.first || 0 %></td>
+            <td data-field="departure.economy" style="background-color: #d7fbe8;"><%= row.departure.economy || 0 %></td>
+            <td data-field="departure.bizBlock" style="background-color: #d7fbe8;"><input type="number" value="<%= row.departure.bizBlock || 0 %>"></td>
+            <td data-field="departure.remainingEco" style="background-color: #d7fbe8;"></td>
             <td style="background-color: #fcd5d5;"><input type="number" value="<%= row.departure.ecoBlock || 0 %>" data-field="departure.ecoBlock"></td>
             <td style="background-color: #fcd5d5;"><input type="number" value="<%= row.departure.bizBlock || 0 %>" data-field="departure.bizBlock"></td>
             <td style="background-color: #fcd5d5;"><input type="number" value="<%= row.departure.firstBlock || 0 %>" data-field="departure.firstBlock"></td>
@@ -70,9 +70,9 @@
             </td>
 
             <!-- 울릉출항 -->
-            <td style="background-color: #d7fbe8;"><%= row.arrival.economy || 0 %></td>
-            <td style="background-color: #d7fbe8;"><%= row.arrival.business || 0 %></td>
-            <td style="background-color: #d7fbe8;"><%= row.arrival.first || 0 %></td>
+            <td data-field="arrival.economy" style="background-color: #d7fbe8;"><%= row.arrival.economy || 0 %></td>
+            <td data-field="arrival.bizBlock" style="background-color: #d7fbe8;"><input type="number" value="<%= row.arrival.bizBlock || 0 %>"></td>
+            <td data-field="arrival.remainingEco" style="background-color: #d7fbe8;"></td>
             <td style="background-color: #fcd5d5;"><input type="number" value="<%= row.arrival.ecoBlock || 0 %>" data-field="arrival.ecoBlock"></td>
             <td style="background-color: #fcd5d5;"><input type="number" value="<%= row.arrival.bizBlock || 0 %>" data-field="arrival.bizBlock"></td>
             <td style="background-color: #fcd5d5;"><input type="number" value="<%= row.arrival.firstBlock || 0 %>" data-field="arrival.firstBlock"></td>
@@ -234,20 +234,25 @@
     const remainingBizCell = row.querySelector('[data-field="departure.remainingBiz"]');
     const remainingFirstCell = row.querySelector('[data-field="departure.remainingFirst"]');
 
-    if (
-      !ecoBlockInput ||
-      !bizBlockInput ||
-      !firstBlockInput ||
-      !economySeatsCell ||
-      !businessSeatsCell ||
-      !firstSeatsCell ||
-      !remainingEcoCell ||
-      !remainingBizCell ||
-      !remainingFirstCell
-    ) {
-      console.error('One or more required elements are missing in calculateRemainingSeats.');
-      return; // Exit the function to prevent further errors
+    if (!ecoBlockInput || !economySeatsCell || !remainingEcoCell) {
+      console.error('Missing elements:', { row });
+      return;
     }
+
+    // if (
+    //   !ecoBlockInput ||
+    //   !bizBlockInput ||
+    //   !firstBlockInput ||
+    //   !economySeatsCell ||
+    //   !businessSeatsCell ||
+    //   !firstSeatsCell ||
+    //   !remainingEcoCell ||
+    //   !remainingBizCell ||
+    //   !remainingFirstCell
+    // ) {
+    //   console.error('One or more required elements are missing in calculateRemainingSeats.');
+    //   return; // Exit the function to prevent further errors
+    // }
 
     // Perform calculations
     const ecoBlock = parseInt(ecoBlockInput.value || 0, 10);
