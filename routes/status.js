@@ -3,9 +3,7 @@ const router = express.Router();
 const Reservation = require('../models/Reservation');
 const ExcelJS = require('exceljs');
 
-const validDate = (date) => {
-  return date instanceof Date && !isNaN(date.getTime());
-};
+const validDate = (date) => date instanceof Date && !isNaN(date.getTime());
 
 
 // 월별 현황
@@ -135,8 +133,8 @@ router.get('/monthly/export', async (req, res) => {
   const currentMonth = parseInt(month, 10) || new Date().getMonth() + 1;
 
   try {
-    const startDate = new Date(`2024-${currentMonth}-01`);
-    const endDate = new Date(`2024-${currentMonth + 1}-01`);
+    const startDate = new Date(`2025-${currentMonth}-01`);
+    const endDate = new Date(`2025-${currentMonth + 1}-01`);
 
     const reservations = await Reservation.find({
       $or: [
@@ -145,6 +143,7 @@ router.get('/monthly/export', async (req, res) => {
       ],
     }).populate('ship');
 
+    const rows = [];
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Monthly Status');
 
@@ -160,6 +159,8 @@ router.get('/monthly/export', async (req, res) => {
       { header: '잔여 비즈', key: 'remainingBusinessSeats', width: 10 },
       { header: '잔여 퍼스', key: 'remainingFirstSeats', width: 10 },
     ];
+
+    rows.forEach((row) => sheet.addRow(row));
 
     reservations.forEach((reservation) => {
       const departureDate = reservation.departureDate?.toISOString().split('T')[0];

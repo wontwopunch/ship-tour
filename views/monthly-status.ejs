@@ -84,7 +84,11 @@
 
 <script>
   function applyFilters() {
-    const month = document.getElementById('monthSelect').value;
+    const month = parseInt(document.getElementById('monthSelect').value, 10);
+    if (isNaN(month) || month < 1 || month > 12) {
+      alert('유효한 월을 선택하세요.');
+      return;
+    }
     window.location.href = `/status/monthly?month=${month}`;
   }
 
