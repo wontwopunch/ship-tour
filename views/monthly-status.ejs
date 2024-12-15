@@ -133,33 +133,24 @@
     const updates = [];
 
     rows.forEach((row) => {
-      const id = row.getAttribute('data-id');
-      if (id) {
-        const departureEcoBlock = parseInt(row.querySelector('[data-field="departure.ecoBlock"]').value, 10) || 0;
-        const departureBizBlock = parseInt(row.querySelector('[data-field="departure.bizBlock"]').value, 10) || 0;
-        const departureFirstBlock = parseInt(row.querySelector('[data-field="departure.firstBlock"]').value, 10) || 0;
+      const date = row.querySelector('td:first-child').innerText.trim();
 
-        const arrivalEcoBlock = parseInt(row.querySelector('[data-field="arrival.ecoBlock"]').value, 10) || 0;
-        const arrivalBizBlock = parseInt(row.querySelector('[data-field="arrival.bizBlock"]').value, 10) || 0;
-        const arrivalFirstBlock = parseInt(row.querySelector('[data-field="arrival.firstBlock"]').value, 10) || 0;
-
-        updates.push({
-          _id: id,
-          departure: {
-            ecoBlock: departureEcoBlock,
-            bizBlock: departureBizBlock,
-            firstBlock: departureFirstBlock,
-          },
-          arrival: {
-            ecoBlock: arrivalEcoBlock,
-            bizBlock: arrivalBizBlock,
-            firstBlock: arrivalFirstBlock,
-          },
-        });
-      }
+      updates.push({
+        date,
+        departure: {
+          ecoBlock: parseInt(row.querySelector('[data-field="departure.ecoBlock"]').value || 0, 10),
+          bizBlock: parseInt(row.querySelector('[data-field="departure.bizBlock"]').value || 0, 10),
+          firstBlock: parseInt(row.querySelector('[data-field="departure.firstBlock"]').value || 0, 10),
+        },
+        arrival: {
+          ecoBlock: parseInt(row.querySelector('[data-field="arrival.ecoBlock"]').value || 0, 10),
+          bizBlock: parseInt(row.querySelector('[data-field="arrival.bizBlock"]').value || 0, 10),
+          firstBlock: parseInt(row.querySelector('[data-field="arrival.firstBlock"]').value || 0, 10),
+        },
+      });
     });
 
-    fetch('/status/monthly/update-block', {
+    fetch('/monthly/update-block', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ updates }),
@@ -167,17 +158,40 @@
       .then((response) => response.json())
       .then((data) => {
         if (data.success) {
-          alert('블록 데이터가 성공적으로 저장되었습니다.');
-          location.reload();
+          alert('블럭 데이터가 저장되었습니다.');
+          location.reload(); // 새로고침으로 반영
         } else {
-          alert('블록 데이터 저장 중 오류가 발생했습니다.');
+          alert('블럭 데이터 저장 중 오류가 발생했습니다.');
         }
       })
       .catch((error) => {
-        console.error('블록 데이터 저장 중 오류:', error);
-        alert('블록 데이터 저장 중 오류가 발생했습니다.');
+        console.error('Error saving block data:', error);
+        alert('블럭 데이터 저장 중 오류가 발생했습니다.');
       });
   }
+
+  function calculateRemainingSeats(row) {
+    const ecoBlock = parseInt(row.querySelector('[data-field="departure.ecoBlock"]').value || 0, 10);
+    const bizBlock = parseInt(row.querySelector('[data-field="departure.bizBlock"]').value || 0, 10);
+    const firstBlock = parseInt(row.querySelector('[data-field="departure.firstBlock"]').value || 0, 10);
+
+    const economySeats = parseInt(row.querySelector('[data-field="departure.economy"]').innerText || 0, 10);
+    const businessSeats = parseInt(row.querySelector('[data-field="departure.business"]').innerText || 0, 10);
+    const firstSeats = parseInt(row.querySelector('[data-field="departure.first"]').innerText || 0, 10);
+
+    row.querySelector('[data-field="departure.remainingEco"]').innerText = ecoBlock - economySeats;
+    row.querySelector('[data-field="departure.remainingBiz"]').innerText = bizBlock - businessSeats;
+    row.querySelector('[data-field="departure.remainingFirst"]').innerText = firstBlock - firstSeats;
+  }
+
+  // 이벤트 리스너로 실시간 잔여 좌석 업데이트
+  document.querySelectorAll('input[data-field]').forEach((input) => {
+    input.addEventListener('input', (e) => {
+      const row = e.target.closest('tr');
+      calculateRemainingSeats(row);
+    });
+  });
+
 
 </script>
 
