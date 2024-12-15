@@ -53,24 +53,24 @@
             </td>
 
             <!-- 포항출항 -->
-            <td><%= row.departure.economy || 0 %></td>
+            <td data-field="departure.economy"><%= row.departure.economy || 0 %></td>
             <td><input type="number" value="<%= row.departure.ecoBlock || 0 %>" data-field="departure.ecoBlock"></td>
             <td data-field="departure.remainingEco"><%= (row.departure.ecoBlock || 0) - (row.departure.economy || 0) %></td>
-            <td><%= row.departure.business || 0 %></td>
+            <td data-field="departure.business"><%= row.departure.business || 0 %></td>
             <td><input type="number" value="<%= row.departure.bizBlock || 0 %>" data-field="departure.bizBlock"></td>
             <td data-field="departure.remainingBiz"><%= (row.departure.bizBlock || 0) - (row.departure.business || 0) %></td>
-            <td><%= row.departure.first || 0 %></td>
+            <td data-field="departure.first"><%= row.departure.first || 0 %></td>
             <td><input type="number" value="<%= row.departure.firstBlock || 0 %>" data-field="departure.firstBlock"></td>
             <td data-field="departure.remainingFirst"><%= (row.departure.firstBlock || 0) - (row.departure.first || 0) %></td>
 
             <!-- 울릉출항 -->
-            <td><%= row.arrival.economy || 0 %></td>
+            <td data-field="arrival.economy"><%= row.arrival.economy || 0 %></td>
             <td><input type="number" value="<%= row.arrival.ecoBlock || 0 %>" data-field="arrival.ecoBlock"></td>
             <td data-field="arrival.remainingEco"><%= (row.arrival.ecoBlock || 0) - (row.arrival.economy || 0) %></td>
-            <td><%= row.arrival.business || 0 %></td>
+            <td data-field="arrival.business"><%= row.arrival.business || 0 %></td>
             <td><input type="number" value="<%= row.arrival.bizBlock || 0 %>" data-field="arrival.bizBlock"></td>
             <td data-field="arrival.remainingBiz"><%= (row.arrival.bizBlock || 0) - (row.arrival.business || 0) %></td>
-            <td><%= row.arrival.first || 0 %></td>
+            <td data-field="arrival.first"><%= row.arrival.first || 0 %></td>
             <td><input type="number" value="<%= row.arrival.firstBlock || 0 %>" data-field="arrival.firstBlock"></td>
             <td data-field="arrival.remainingFirst"><%= (row.arrival.firstBlock || 0) - (row.arrival.first || 0) %></td>
           </tr>
@@ -228,29 +228,38 @@
 
 
   function calculateRemainingSeats(row, type) {
-    const elements = ['ecoBlock', 'bizBlock', 'firstBlock', 'economy', 'business', 'first'];
-    const remaining = ['remainingEco', 'remainingBiz', 'remainingFirst'];
+    const fields = ['economy', 'bizBlock', 'firstBlock', 'remainingEco', 'remainingBiz', 'remainingFirst'];
+    const mappings = {
+      economy: `${type}.economy`,
+      bizBlock: `${type}.bizBlock`,
+      firstBlock: `${type}.firstBlock`,
+      remainingEco: `${type}.remainingEco`,
+      remainingBiz: `${type}.remainingBiz`,
+      remainingFirst: `${type}.remainingFirst`,
+    };
 
-    elements.forEach((el, index) => {
-      const blockInput = row.querySelector(`[data-field="${type}.${el}"]`);
-      const seatsCell = row.querySelector(`[data-field="${type}.${elements[index]}"]`);
-      const remainingCell = row.querySelector(`[data-field="${type}.${remaining[index]}"]`);
-
-      if (!blockInput || !seatsCell || !remainingCell) {
-        console.error(`Missing element for type ${type}, field: ${el}`);
+    fields.forEach((field) => {
+      const input = row.querySelector(`[data-field="${mappings[field]}"]`);
+      if (!input) {
+        console.error(`Missing element for type ${type}, field: ${field}`);
         return;
       }
-
-      const block = parseInt(blockInput.value || 0, 10);
-      const seats = parseInt(seatsCell.innerText || 0, 10);
+      const block = parseInt(input.value || 0, 10);
+      const seats = parseInt(input.innerText || 0, 10);
+      const remainingCell = row.querySelector(`[data-field="${mappings[field]}"]`);
       remainingCell.innerText = block - seats;
       remainingCell.style.color = block - seats < 0 ? 'red' : 'inherit';
     });
   }
 
+
+
   function updateServer(row, field, value) {
     const date = row.querySelector('td:first-child')?.innerText.trim();
-    if (!date) return;
+    if (!date) {
+      console.error('Missing date for server update');
+      return;
+    }
 
     const updateData = {
       date,
@@ -270,13 +279,15 @@
       })
       .then((result) => {
         if (!result.success) {
-          alert('실시간 업데이트 실패');
+          console.error('Server update failed:', result.message);
+          alert('업데이트 실패');
         }
       })
       .catch((error) => {
         console.error('실시간 업데이트 중 오류:', error);
       });
   }
+
 
   document.querySelectorAll('input[type="number"]').forEach((input) => {
     input.addEventListener('input', (event) => {
