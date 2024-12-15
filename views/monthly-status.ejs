@@ -53,38 +53,26 @@
             </td>
         
             <!-- 포항출항 -->
-            <td><%= row.departure.economy || 0 %></td>
-            <td><%= row.departure.business || 0 %></td>
-            <td><%= row.departure.first || 0 %></td>
-            <td><%= row.departure.ecoBlock || 0 %></td>
-            <td><%= row.departure.bizBlock || 0 %></td>
-            <td><%= row.departure.firstBlock || 0 %></td>
-            <td style="color: <%= ((row.departure.ecoBlock || 0) - (row.departure.economy || 0)) < 0 ? 'red' : 'inherit' %>;">
-              <%= (row.departure.ecoBlock || 0) - (row.departure.economy || 0) %>
-            </td>
-            <td style="color: <%= ((row.departure.bizBlock || 0) - (row.departure.business || 0)) < 0 ? 'red' : 'inherit' %>;">
-              <%= (row.departure.bizBlock || 0) - (row.departure.business || 0) %>
-            </td>
-            <td style="color: <%= ((row.departure.firstBlock || 0) - (row.departure.first || 0)) < 0 ? 'red' : 'inherit' %>;">
-              <%= (row.departure.firstBlock || 0) - (row.departure.first || 0) %>
-            </td>
-        
+            <td style="color: green;"><%= row.departure.economy || 0 %></td>
+            <td style="color: green;"><%= row.departure.business || 0 %></td>
+            <td style="color: green;"><%= row.departure.first || 0 %></td>
+            <td contenteditable="true" style="color: red;" data-field="departure-ecoBlock"><%= row.departure.ecoBlock || 0 %></td>
+            <td contenteditable="true" style="color: red;" data-field="departure-bizBlock"><%= row.departure.bizBlock || 0 %></td>
+            <td contenteditable="true" style="color: red;" data-field="departure-firstBlock"><%= row.departure.firstBlock || 0 %></td>
+            <td style="color: purple;"><%= (row.departure.ecoBlock || 0) - (row.departure.economy || 0) %></td>
+            <td style="color: purple;"><%= (row.departure.bizBlock || 0) - (row.departure.business || 0) %></td>
+            <td style="color: purple;"><%= (row.departure.firstBlock || 0) - (row.departure.first || 0) %></td>
+
             <!-- 울릉출항 -->
-            <td><%= row.arrival.economy || 0 %></td>
-            <td><%= row.arrival.business || 0 %></td>
-            <td><%= row.arrival.first || 0 %></td>
-            <td><%= row.arrival.ecoBlock || 0 %></td>
-            <td><%= row.arrival.bizBlock || 0 %></td>
-            <td><%= row.arrival.firstBlock || 0 %></td>
-            <td style="color: <%= ((row.arrival.ecoBlock || 0) - (row.arrival.economy || 0)) < 0 ? 'red' : 'inherit' %>;">
-              <%= (row.arrival.ecoBlock || 0) - (row.arrival.economy || 0) %>
-            </td>
-            <td style="color: <%= ((row.arrival.bizBlock || 0) - (row.arrival.business || 0)) < 0 ? 'red' : 'inherit' %>;">
-              <%= (row.arrival.bizBlock || 0) - (row.arrival.business || 0) %>
-            </td>
-            <td style="color: <%= ((row.arrival.firstBlock || 0) - (row.arrival.first || 0)) < 0 ? 'red' : 'inherit' %>;">
-              <%= (row.arrival.firstBlock || 0) - (row.arrival.first || 0) %>
-            </td>
+            <td style="color: green;"><%= row.arrival.economy || 0 %></td>
+            <td style="color: green;"><%= row.arrival.business || 0 %></td>
+            <td style="color: green;"><%= row.arrival.first || 0 %></td>
+            <td contenteditable="true" style="color: red;" data-field="arrival-ecoBlock"><%= row.arrival.ecoBlock || 0 %></td>
+            <td contenteditable="true" style="color: red;" data-field="arrival-bizBlock"><%= row.arrival.bizBlock || 0 %></td>
+            <td contenteditable="true" style="color: red;" data-field="arrival-firstBlock"><%= row.arrival.firstBlock || 0 %></td>
+            <td style="color: purple;"><%= (row.arrival.ecoBlock || 0) - (row.arrival.economy || 0) %></td>
+            <td style="color: purple;"><%= (row.arrival.bizBlock || 0) - (row.arrival.business || 0) %></td>
+            <td style="color: purple;"><%= (row.arrival.firstBlock || 0) - (row.arrival.first || 0) %></td>
           </tr>
         <% }); %>
         
@@ -105,6 +93,29 @@
     const month = document.getElementById('monthSelect').value;
     window.location.href = `/status/monthly/export?month=${month}`;
   }
+
+
+  // 실시간 업데이트
+  document.querySelectorAll('[contenteditable="true"]').forEach((cell) => {
+    cell.addEventListener('blur', (e) => {
+      const value = parseInt(e.target.innerText.trim(), 10) || 0;
+      const field = e.target.getAttribute('data-field');
+      const [type, key] = field.split('-');
+      const date = e.target.closest('tr').querySelector('td:first-child').innerText.trim();
+
+      fetch(`/status/update-block`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date, type, key, value }),
+      })
+        .then((response) => response.json())
+        .then((result) => {
+          if (!result.success) {
+            alert('업데이트 실패');
+          }
+        });
+    });
+  });
 </script>
 
 <style>

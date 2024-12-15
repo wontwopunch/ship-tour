@@ -75,6 +75,22 @@ router.get('/monthly', async (req, res) => {
     }
   });
   
+router.post('/update-block', async (req, res) => {
+    const { date, type, key, value } = req.body;
+  
+    try {
+      const updateField = `${type}.${key}`;
+      await Reservation.updateMany(
+        { $or: [{ departureDate: date }, { arrivalDate: date }] },
+        { $set: { [updateField]: value } }
+      );
+  
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error updating block value:', error);
+      res.status(500).json({ success: false, message: 'Update failed' });
+    }
+});
   
   
 // 엑셀 다운로드

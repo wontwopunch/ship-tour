@@ -46,15 +46,6 @@
 </div>
 
 <script>
-  // 색상 변경
-  document.querySelectorAll('tr').forEach(row => {
-    const eco = row.querySelector('[data-field="eco"]');
-    const biz = row.querySelector('[data-field="biz"]');
-    const first = row.querySelector('[data-field="first"]');
-    if (eco) eco.style.backgroundColor = 'red';
-    if (biz) biz.style.backgroundColor = 'purple';
-    if (first) first.style.backgroundColor = 'green';
-  });
 
   // 수정 버튼 클릭 처리
   document.querySelectorAll('.update-btn').forEach(button => {

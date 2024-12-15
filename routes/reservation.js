@@ -25,12 +25,22 @@ router.get('/monthly', async (req, res) => {
 
     const [reservations, ships] = await Promise.all([
       Reservation.find({ departureDate: { $gte: startDate, $lt: endDate } })
-        .populate('ship')
-        .sort({ departureDate: 1, arrivalDate: 1 }), // 출항일 기준 정렬 및 입항일 추가 정렬
+        .populate({
+          path: 'ship',
+          select: '_id name eco biz first', // 필요한 필드만 가져오기
+        })
+        .sort({ departureDate: 1, arrivalDate: 1 }),
       Ship.find(),
     ]);
 
-    res.render('monthly-reservations', { reservations, selectedMonth: currentMonth, ships });
+    res.render('monthly-reservations', {
+      reservations: reservations.map((reservation) => ({
+        ...reservation.toObject(),
+        ship: reservation.ship || { _id: 'N/A', name: 'Unknown Ship' }, // 기본값 설정
+      })),
+      selectedMonth: currentMonth,
+      ships,
+    });
   } catch (error) {
     console.error('Error fetching monthly reservations:', error);
     res.status(500).send('Error fetching reservations.');
@@ -58,7 +68,7 @@ router.post('/add-bulk', async (req, res) => {
     });
 
     const savedReservations = await Reservation.insertMany(newReservations, { ordered: false });
-    res.json({ success: true, data: savedReservations }); // 저장된 데이터 반환
+    res.json({ success: true, data: savedReservations });
   } catch (error) {
     console.error('Error during bulk addition:', error);
     res.status(500).json({ success: false, message: 'Bulk addition failed.' });
@@ -122,6 +132,7 @@ router.post('/add', async (req, res) => {
   }
 });
 
+
 // 예약 데이터 수정
 router.post('/update/:id', async (req, res) => {
   const { id } = req.params;
@@ -170,9 +181,9 @@ router.get('/export', async (req, res) => {
       return res.status(400).send('Invalid date range');
     }
 
-    const reservations = await Reservation.find({
-      departureDate: { $gte: startDate, $lt: endDate },
-    }).populate('ship');
+    const reservations = await Reservation.find({ departureDate: { $gte: startDate, $lt: endDate } })
+    .populate('ship') // Ship 정보를 채워줌
+    .sort({ departureDate: 1, arrivalDate: 1 });
 
     // 엑셀 워크북 생성
     const workbook = new ExcelJS.Workbook();
