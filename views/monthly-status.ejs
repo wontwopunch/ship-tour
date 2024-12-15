@@ -11,7 +11,7 @@
       <% } %>
     </select>
   </div>
-
+  <button onclick="saveBlockData()">블럭 데이터 저장</button>
   <!-- 테이블 -->
   <div class="table-container">
     <table border="1">
@@ -53,29 +53,40 @@
             </td>
         
             <!-- 포항출항 -->
-            <td style="color: green;"><%= row.departure.economy || 0 %></td>
-            <td style="color: green;"><%= row.departure.business || 0 %></td>
-            <td style="color: green;"><%= row.departure.first || 0 %></td>
-            <td contenteditable="true" style="color: red;" data-field="departure-ecoBlock"><%= row.departure.ecoBlock || 0 %></td>
-            <td contenteditable="true" style="color: red;" data-field="departure-bizBlock"><%= row.departure.bizBlock || 0 %></td>
-            <td contenteditable="true" style="color: red;" data-field="departure-firstBlock"><%= row.departure.firstBlock || 0 %></td>
-            <td style="color: purple;"><%= (row.departure.ecoBlock || 0) - (row.departure.economy || 0) %></td>
-            <td style="color: purple;"><%= (row.departure.bizBlock || 0) - (row.departure.business || 0) %></td>
-            <td style="color: purple;"><%= (row.departure.firstBlock || 0) - (row.departure.first || 0) %></td>
+            <td style="background-color: #d7fbe8;"><%= row.departure.economy || 0 %></td>
+            <td style="background-color: #d7fbe8;"><%= row.departure.business || 0 %></td>
+            <td style="background-color: #d7fbe8;"><%= row.departure.first || 0 %></td>
+            <td style="background-color: #fcd5d5;"><input type="number" value="<%= row.departure.ecoBlock || 0 %>" data-field="departure.ecoBlock"></td>
+            <td style="background-color: #fcd5d5;"><input type="number" value="<%= row.departure.bizBlock || 0 %>" data-field="departure.bizBlock"></td>
+            <td style="background-color: #fcd5d5;"><input type="number" value="<%= row.departure.firstBlock || 0 %>" data-field="departure.firstBlock"></td>
+            <td style="background-color: #e6d9fb; color: <%= ((row.departure.ecoBlock || 0) - (row.departure.economy || 0)) < 0 ? 'red' : 'inherit' %>;">
+              <%= (row.departure.ecoBlock || 0) - (row.departure.economy || 0) %>
+            </td>
+            <td style="background-color: #e6d9fb; color: <%= ((row.departure.bizBlock || 0) - (row.departure.business || 0)) < 0 ? 'red' : 'inherit' %>;">
+              <%= (row.departure.bizBlock || 0) - (row.departure.business || 0) %>
+            </td>
+            <td style="background-color: #e6d9fb; color: <%= ((row.departure.firstBlock || 0) - (row.departure.first || 0)) < 0 ? 'red' : 'inherit' %>;">
+              <%= (row.departure.firstBlock || 0) - (row.departure.first || 0) %>
+            </td>
 
             <!-- 울릉출항 -->
-            <td style="color: green;"><%= row.arrival.economy || 0 %></td>
-            <td style="color: green;"><%= row.arrival.business || 0 %></td>
-            <td style="color: green;"><%= row.arrival.first || 0 %></td>
-            <td contenteditable="true" style="color: red;" data-field="arrival-ecoBlock"><%= row.arrival.ecoBlock || 0 %></td>
-            <td contenteditable="true" style="color: red;" data-field="arrival-bizBlock"><%= row.arrival.bizBlock || 0 %></td>
-            <td contenteditable="true" style="color: red;" data-field="arrival-firstBlock"><%= row.arrival.firstBlock || 0 %></td>
-            <td style="color: purple;"><%= (row.arrival.ecoBlock || 0) - (row.arrival.economy || 0) %></td>
-            <td style="color: purple;"><%= (row.arrival.bizBlock || 0) - (row.arrival.business || 0) %></td>
-            <td style="color: purple;"><%= (row.arrival.firstBlock || 0) - (row.arrival.first || 0) %></td>
+            <td style="background-color: #d7fbe8;"><%= row.arrival.economy || 0 %></td>
+            <td style="background-color: #d7fbe8;"><%= row.arrival.business || 0 %></td>
+            <td style="background-color: #d7fbe8;"><%= row.arrival.first || 0 %></td>
+            <td style="background-color: #fcd5d5;"><input type="number" value="<%= row.arrival.ecoBlock || 0 %>" data-field="arrival.ecoBlock"></td>
+            <td style="background-color: #fcd5d5;"><input type="number" value="<%= row.arrival.bizBlock || 0 %>" data-field="arrival.bizBlock"></td>
+            <td style="background-color: #fcd5d5;"><input type="number" value="<%= row.arrival.firstBlock || 0 %>" data-field="arrival.firstBlock"></td>
+            <td style="background-color: #e6d9fb; color: <%= ((row.arrival.ecoBlock || 0) - (row.arrival.economy || 0)) < 0 ? 'red' : 'inherit' %>;">
+              <%= (row.arrival.ecoBlock || 0) - (row.arrival.economy || 0) %>
+            </td>
+            <td style="background-color: #e6d9fb; color: <%= ((row.arrival.bizBlock || 0) - (row.arrival.business || 0)) < 0 ? 'red' : 'inherit' %>;">
+              <%= (row.arrival.bizBlock || 0) - (row.arrival.business || 0) %>
+            </td>
+            <td style="background-color: #e6d9fb; color: <%= ((row.arrival.firstBlock || 0) - (row.arrival.first || 0)) < 0 ? 'red' : 'inherit' %>;">
+              <%= (row.arrival.firstBlock || 0) - (row.arrival.first || 0) %>
+            </td>
           </tr>
-        <% }); %>
-        
+        <% }) %>
       </tbody>
     </table>
   </div>
@@ -116,6 +127,46 @@
         });
     });
   });
+
+function saveBlockData() {
+  const rows = document.querySelectorAll('tbody tr');
+  const updates = [];
+
+  rows.forEach((row) => {
+    const id = row.getAttribute('data-id');
+    if (id) {
+      updates.push({
+        _id: id,
+        'departure.ecoBlock': row.querySelector('[data-field="departure.ecoBlock"]').value || 0,
+        'departure.bizBlock': row.querySelector('[data-field="departure.bizBlock"]').value || 0,
+        'departure.firstBlock': row.querySelector('[data-field="departure.firstBlock"]').value || 0,
+        'arrival.ecoBlock': row.querySelector('[data-field="arrival.ecoBlock"]').value || 0,
+        'arrival.bizBlock': row.querySelector('[data-field="arrival.bizBlock"]').value || 0,
+        'arrival.firstBlock': row.querySelector('[data-field="arrival.firstBlock"]').value || 0,
+      });
+    }
+  });
+
+  fetch('/status/monthly/update-block', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ updates }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        alert('블럭 데이터가 저장되었습니다.');
+        location.reload();
+      } else {
+        alert('블럭 데이터 저장 중 오류가 발생했습니다.');
+      }
+    })
+    .catch((error) => {
+      console.error('Error saving block data:', error);
+      alert('블럭 데이터 저장 중 오류가 발생했습니다.');
+    });
+}
+
 </script>
 
 <style>

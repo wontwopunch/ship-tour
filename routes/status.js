@@ -91,7 +91,27 @@ router.post('/update-block', async (req, res) => {
       res.status(500).json({ success: false, message: 'Update failed' });
     }
 });
-  
+
+
+// 블럭 수 업데이트
+router.post('/monthly/update-block', async (req, res) => {
+  const { updates } = req.body;
+
+  try {
+    for (const update of updates) {
+      const reservation = await Reservation.findById(update._id);
+      if (reservation) {
+        Object.assign(reservation, update); // 업데이트 데이터 병합
+        await reservation.save();
+      }
+    }
+    res.json({ success: true, message: 'Block data updated successfully' });
+  } catch (error) {
+    console.error('Error updating block data:', error);
+    res.status(500).json({ success: false, message: 'Error updating block data' });
+  }
+});
+
   
 // 엑셀 다운로드
 router.get('/monthly/export', async (req, res) => {
