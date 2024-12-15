@@ -73,9 +73,13 @@
               <td>
                 <select data-field="ship">
                   <option value="" disabled <%= !reservation.ship ? 'selected' : '' %>>선박 선택</option>
-                  <% ships.forEach(ship => { %>
-                    <option value="<%= ship._id %>" <%= reservation.ship && reservation.ship._id == ship._id ? 'selected' : '' %>><%= ship.name %></option>
-                  <% }) %>
+                  <% if (ships && ships.length > 0) { %>
+                    <% ships.forEach(ship => { %>
+                      <option value="<%= ship._id %>" <%= reservation.ship && reservation.ship._id == ship._id ? 'selected' : '' %>><%= ship.name %></option>
+                    <% }) %>
+                  <% } else { %>
+                    <option value="" disabled>선박 정보 없음</option>
+                  <% } %>
                 </select>
               </td>
               <td contenteditable="true" data-field="listStatus"><%= reservation.listStatus || '' %></td>
@@ -117,7 +121,7 @@
             <td colspan="33">해당 월에 예약된 데이터가 없습니다.</td>
           </tr>
         <% } %>
-      </tbody>          
+      </tbody>
     </table>
    </div>
   </div>

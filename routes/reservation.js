@@ -9,6 +9,7 @@ function isValidDate(d) {
   return d instanceof Date && !isNaN(d);
 }
 
+
 // 월별 예약 데이터 조회
 router.get('/monthly', async (req, res) => {
   const { month } = req.query;
@@ -31,24 +32,23 @@ router.get('/monthly', async (req, res) => {
     console.log('Reservations fetched:', reservations);
     console.log('Ships fetched:', ships);
 
-    // 빈 데이터 처리
-    if (!reservations || reservations.length === 0) {
-      console.warn('No reservations found for the given month.');
-    }
-
+    // reservations와 ships가 비어있는 경우를 대비
     res.render('monthly-reservations', {
-      reservations: reservations.map((reservation) => ({
-        ...reservation.toObject(),
-        ship: reservation.ship || null,
-      })),
+      reservations: reservations.length > 0
+        ? reservations.map((reservation) => ({
+            ...reservation.toObject(),
+            ship: reservation.ship || null,
+          }))
+        : [], // reservations가 없으면 빈 배열 전달
       selectedMonth: currentMonth,
-      ships,
+      ships: ships || [], // ships가 없으면 빈 배열 전달
     });
   } catch (error) {
     console.error('Error fetching monthly reservations:', error);
     res.status(500).send('Error fetching reservations.');
   }
 });
+
 
 
 
