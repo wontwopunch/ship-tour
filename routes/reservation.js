@@ -10,10 +10,9 @@ function isValidDate(d) {
 }
 
 // 월별 예약 데이터 조회
-// 월별 예약 데이터 조회
 router.get('/monthly', async (req, res) => {
   const { month } = req.query;
-  const currentMonth = month || new Date().getMonth() + 1;
+  const currentMonth = parseInt(month, 10) || new Date().getMonth() + 1;
 
   try {
     const startDate = new Date(`2024-${currentMonth}-01`);
@@ -25,12 +24,19 @@ router.get('/monthly', async (req, res) => {
           path: 'ship',
           select: '_id name', // 필요한 필드만 가져오기
         })
-        .sort({ departureDate: 1 }),
+        .sort({ departureDate: 1, arrivalDate: 1 }),
       Ship.find(),
     ]);
 
+    if (!reservations.length) {
+      console.warn('No reservations found for the given month:', { startDate, endDate });
+    }
+
     res.render('monthly-reservations', {
-      reservations: reservations || [],
+      reservations: reservations.map((reservation) => ({
+        ...reservation.toObject(),
+        ship: reservation.ship || null,
+      })),
       selectedMonth: currentMonth,
       ships,
     });
@@ -39,6 +45,7 @@ router.get('/monthly', async (req, res) => {
     res.status(500).send('Error fetching reservations.');
   }
 });
+
 
 // 새 예약 데이터 일괄 삽입
 router.post('/add-bulk', async (req, res) => {
