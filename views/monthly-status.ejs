@@ -219,4 +219,44 @@ function saveBlockData() {
   button:hover {
     background-color: #218838;
   }
+
+  .table-container {
+  margin-top: 20px;
+  overflow-x: auto; /* 가로 스크롤 허용 */
+  }
+
+  table {
+    width: max-content; /* 테이블이 내용에 맞게 확장됨 */
+    border-collapse: collapse;
+    text-align: center;
+  }
+
+  table th {
+    background-color: #007bff;
+    color: white;
+    padding: 8px;
+  }
+
+  table td {
+    padding: 6px; /* 간격을 줄임 */
+    font-size: 14px; /* 텍스트 크기 조정 */
+    white-space: nowrap; /* 텍스트 줄바꿈 방지 */
+  }
+
+  .block-cell {
+    background-color: #ffc8c8; /* 블럭 셀의 배경을 부드러운 빨간색으로 설정 */
+  }
+
+  .remaining-cell {
+    background-color: #d1c4f9; /* 잔여 셀의 배경을 부드러운 보라색으로 설정 */
+  }
+
+  table tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+
+  table tr:hover {
+    background-color: #e0f7fa; /* 행에 마우스를 올렸을 때 색상 변경 */
+  }
+
 </style>

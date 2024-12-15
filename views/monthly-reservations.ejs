@@ -70,9 +70,9 @@
         <tr data-id="<%= reservation._id %>">
           <td>
             <select data-field="ship">
-              <option value="" disabled>선박 선택</option>
+              <option value="" disabled <%= !reservation.ship ? 'selected' : '' %>>선박 선택</option>
               <% ships.forEach(ship => { %>
-                <option value="<%= ship._id %>" <%= reservation.ship._id == ship._id ? 'selected' : '' %>><%= ship.name %></option>
+                <option value="<%= ship._id %>" <%= reservation.ship && reservation.ship._id == ship._id ? 'selected' : '' %>><%= ship.name %></option>
               <% }) %>
             </select>
           </td>

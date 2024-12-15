@@ -27,16 +27,20 @@ router.get('/monthly', async (req, res) => {
       Reservation.find({ departureDate: { $gte: startDate, $lt: endDate } })
         .populate({
           path: 'ship',
-          select: '_id name eco biz first', // 필요한 필드만 가져오기
+          select: '_id name', // 필요한 필드만 가져오기
         })
         .sort({ departureDate: 1, arrivalDate: 1 }),
       Ship.find(),
     ]);
 
+    // reservations와 ships가 올바르게 전달되는지 확인
+    console.log('Reservations:', reservations);
+    console.log('Ships:', ships);
+
     res.render('monthly-reservations', {
       reservations: reservations.map((reservation) => ({
         ...reservation.toObject(),
-        ship: reservation.ship || { _id: 'N/A', name: 'Unknown Ship' }, // 기본값 설정
+        ship: reservation.ship || null, // ship이 없는 경우 null 처리
       })),
       selectedMonth: currentMonth,
       ships,
