@@ -123,6 +123,8 @@
   </div>
 
 <script>
+  const ships = <%- JSON.stringify(ships) %>;
+
   function getCaretPosition(element) {
     const selection = window.getSelection();
     if (selection.rangeCount > 0) {
@@ -150,29 +152,28 @@
   }
 
   function setFormattedValue(cell, value) {
+    if (!cell) return; // cell이 null일 경우 함수 종료
+
     const numericFields = [
       'totalSeats', 'economySeats', 'businessSeats', 'firstSeats',
-      'dokdoTourPeople',
-      'totalPrice', 'deposit', 'balance',
-      'departureFee', 'arrivalFee', 'dokdoFee',
-      'restaurantFee', 'eventFee', 'otherFee',
-      'refund', 'totalSettlement', 'profit'
+      'dokdoTourPeople', 'totalPrice', 'deposit', 'balance',
+      'departureFee', 'arrivalFee', 'dokdoFee', 'restaurantFee',
+      'eventFee', 'otherFee', 'refund', 'totalSettlement', 'profit'
     ];
 
     const fieldName = cell.getAttribute('data-field');
+    if (!fieldName) return; // 필드 이름이 없을 경우 종료
+
     const isNumericField = numericFields.includes(fieldName);
     const isActiveCell = document.activeElement === cell;
-    
-    // 현재 커서 위치와 텍스트 길이 저장
+
     const currentLength = cell.innerText.length;
     const selection = window.getSelection();
     const cursorPosition = isActiveCell ? selection.focusOffset : 0;
 
     if (!isNumericField) {
-      // 텍스트 필드는 그대로 값 설정
       cell.innerText = value.toString();
       if (isActiveCell) {
-        // 텍스트 필드의 경우 이전 커서 위치 유지
         const range = document.createRange();
         const textNode = cell.firstChild || cell;
         if (textNode.nodeType === 3) {
@@ -186,7 +187,6 @@
       return;
     }
 
-    // 숫자 필드 처리
     if (value === 0 && isActiveCell) {
       cell.innerText = '';
       return;
@@ -196,7 +196,6 @@
     cell.innerText = formattedValue;
 
     if (isActiveCell) {
-      // 입력 중인 경우 커서 위치 조정
       const newPosition = Math.min(
         cursorPosition + (formattedValue.length - currentLength),
         formattedValue.length
@@ -204,6 +203,7 @@
       setCaretPosition(cell, Math.max(0, newPosition));
     }
   }
+
 
   function saveChanges() {
     const rows = document.querySelectorAll('#reservationTable tbody tr');
@@ -333,7 +333,6 @@
       <td><button onclick="deleteRow(null)">삭제</button></td>
     `;
   }
-
 
   function deleteRow(id) {
     if (!confirm('이 행을 삭제하시겠습니까?')) return;

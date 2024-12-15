@@ -34,14 +34,12 @@ router.get('/monthly', async (req, res) => {
 
     // reservations와 ships가 비어있는 경우를 대비
     res.render('monthly-reservations', {
-      reservations: reservations.length > 0
-        ? reservations.map((reservation) => ({
-            ...reservation.toObject(),
-            ship: reservation.ship || null,
-          }))
-        : [], // reservations가 없으면 빈 배열 전달
+      reservations: reservations.map((reservation) => ({
+        ...reservation.toObject(),
+        ship: reservation.ship || null,
+      })),
       selectedMonth: currentMonth,
-      ships: ships || [], // ships가 없으면 빈 배열 전달
+      ships,
     });
   } catch (error) {
     console.error('Error fetching monthly reservations:', error);
