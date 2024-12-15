@@ -120,64 +120,64 @@
     });
   });
 
-  // 실시간 잔여 좌석 계산
-  document.querySelectorAll('input[type="number"]').forEach((input) => {
-    input.addEventListener('input', (event) => {
-      const row = event.target.closest('tr');
-      if (!row) return;
+  // // 실시간 잔여 좌석 계산
+  // document.querySelectorAll('input[type="number"]').forEach((input) => {
+  //   input.addEventListener('input', (event) => {
+  //     const row = event.target.closest('tr');
+  //     if (!row) return;
 
-      const economyInput = row.querySelector('[data-field="departure.ecoBlock"]');
-      const economyRemaining = row.querySelector('[data-field="departure.remainingEco"]');
-      const economyReserved = row.querySelector('td:nth-child(2)')?.innerText;
+  //     const economyInput = row.querySelector('[data-field="departure.ecoBlock"]');
+  //     const economyRemaining = row.querySelector('[data-field="departure.remainingEco"]');
+  //     const economyReserved = row.querySelector('td:nth-child(2)')?.innerText;
 
-      if (economyInput && economyRemaining && economyReserved) {
-        const reserved = parseInt(economyReserved, 10) || 0;
-        const block = parseInt(economyInput.value, 10) || 0;
-        economyRemaining.innerText = block - reserved;
-      }
-    });
-  });
+  //     if (economyInput && economyRemaining && economyReserved) {
+  //       const reserved = parseInt(economyReserved, 10) || 0;
+  //       const block = parseInt(economyInput.value, 10) || 0;
+  //       economyRemaining.innerText = block - reserved;
+  //     }
+  //   });
+  // });
 
-  // 실시간 서버 업데이트
-  document.querySelectorAll('input[type="number"]').forEach((input) => {
-    input.addEventListener('blur', (event) => {
-      const row = event.target.closest('tr');
-      if (!row) return;
+  // // 실시간 서버 업데이트
+  // document.querySelectorAll('input[type="number"]').forEach((input) => {
+  //   input.addEventListener('blur', (event) => {
+  //     const row = event.target.closest('tr');
+  //     if (!row) return;
 
-      const date = row.querySelector('td:first-child')?.innerText.trim();
-      const field = event.target.getAttribute('data-field');
-      const value = parseInt(event.target.value || 0, 10);
+  //     const date = row.querySelector('td:first-child')?.innerText.trim();
+  //     const field = event.target.getAttribute('data-field');
+  //     const value = parseInt(event.target.value || 0, 10);
 
-      const updateData = {
-        date,
-        type: field.startsWith('departure') ? 'departure' : 'arrival',
-        key: field.split('.')[1],
-        value,
-      };
+  //     const updateData = {
+  //       date,
+  //       type: field.startsWith('departure') ? 'departure' : 'arrival',
+  //       key: field.split('.')[1],
+  //       value,
+  //     };
 
-      fetch('/status/monthly/update-block', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ updates }),
-    })
-        .then((response) => {
-          if (!response.ok) throw new Error('Failed to update block data');
-          return response.json();
-        })
-        .then((result) => {
-          if (!result.success) {
-            alert('실시간 업데이트 실패');
-          }
-        })
-        .catch((error) => {
-          console.error('실시간 업데이트 중 오류:', error);
-        });
-    });
-  });
+  //     fetch('/status/monthly/update-block', {
+  //     method: 'POST',
+  //     headers: { 'Content-Type': 'application/json' },
+  //     body: JSON.stringify({ updates }),
+  //   })
+  //       .then((response) => {
+  //         if (!response.ok) throw new Error('Failed to update block data');
+  //         return response.json();
+  //       })
+  //       .then((result) => {
+  //         if (!result.success) {
+  //           alert('실시간 업데이트 실패');
+  //         }
+  //       })
+  //       .catch((error) => {
+  //         console.error('실시간 업데이트 중 오류:', error);
+  //       });
+  //   });
+  // });
 
   function saveBlockData() {
     const rows = document.querySelectorAll('tbody tr');
-    const updates = [];
+    const updates = []; // updates 변수를 선언합니다.
 
     rows.forEach((row) => {
       const date = row.querySelector('td:first-child')?.innerText.trim();
@@ -201,7 +201,7 @@
     fetch('/status/monthly/update-block', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ updates }),
+      body: JSON.stringify({ updates }), // updates를 서버로 전송
     })
       .then((response) => {
         if (!response.ok) throw new Error('Failed to update block data');
@@ -222,19 +222,20 @@
   }
 
 
-  function calculateRemainingSeats(row) {
-    // Safely fetch all required elements
-    const ecoBlockInput = row.querySelector('[data-field="departure.ecoBlock"]');
-    const bizBlockInput = row.querySelector('[data-field="departure.bizBlock"]');
-    const firstBlockInput = row.querySelector('[data-field="departure.firstBlock"]');
 
-    const economySeatsCell = row.querySelector('[data-field="departure.economy"]');
-    const businessSeatsCell = row.querySelector('[data-field="departure.business"]');
-    const firstSeatsCell = row.querySelector('[data-field="departure.first"]');
+  function calculateRemainingSeats(row, type) {
+    // Safely fetch all required elements for the given type (departure or arrival)
+    const ecoBlockInput = row.querySelector(`[data-field="${type}.ecoBlock"]`);
+    const bizBlockInput = row.querySelector(`[data-field="${type}.bizBlock"]`);
+    const firstBlockInput = row.querySelector(`[data-field="${type}.firstBlock"]`);
 
-    const remainingEcoCell = row.querySelector('[data-field="departure.remainingEco"]');
-    const remainingBizCell = row.querySelector('[data-field="departure.remainingBiz"]');
-    const remainingFirstCell = row.querySelector('[data-field="departure.remainingFirst"]');
+    const economySeatsCell = row.querySelector(`[data-field="${type}.economy"]`);
+    const businessSeatsCell = row.querySelector(`[data-field="${type}.business"]`);
+    const firstSeatsCell = row.querySelector(`[data-field="${type}.first"]`);
+
+    const remainingEcoCell = row.querySelector(`[data-field="${type}.remainingEco"]`);
+    const remainingBizCell = row.querySelector(`[data-field="${type}.remainingBiz"]`);
+    const remainingFirstCell = row.querySelector(`[data-field="${type}.remainingFirst"]`);
 
     if (
       !ecoBlockInput ||
@@ -247,7 +248,7 @@
       !remainingBizCell ||
       !remainingFirstCell
     ) {
-      console.error('One or more required elements are missing in calculateRemainingSeats.');
+      console.error(`One or more required elements are missing in calculateRemainingSeats for type: ${type}`);
       return; // Exit the function to prevent further errors
     }
 
@@ -265,13 +266,63 @@
     remainingBizCell.innerText = bizBlock - businessSeats;
     remainingFirstCell.innerText = firstBlock - firstSeats;
 
+    // Apply color based on availability
     remainingEcoCell.style.color = (ecoBlock - economySeats) < 0 ? 'red' : 'inherit';
     remainingBizCell.style.color = (bizBlock - businessSeats) < 0 ? 'red' : 'inherit';
     remainingFirstCell.style.color = (firstBlock - firstSeats) < 0 ? 'red' : 'inherit';
-
   }
 
+  // 서버 업데이트 함수
+  function updateServer(row, field, value) {
+    const date = row.querySelector('td:first-child')?.innerText.trim();
+    if (!date) return;
 
+    const updateData = {
+      date,
+      type: field.startsWith('departure') ? 'departure' : 'arrival',
+      key: field.split('.')[1],
+      value,
+    };
+
+    fetch('/status/monthly/update-block', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updateData),
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error('Failed to update block data');
+        return response.json();
+      })
+      .then((result) => {
+        if (!result.success) {
+          alert('실시간 업데이트 실패');
+        }
+      })
+      .catch((error) => {
+        console.error('실시간 업데이트 중 오류:', error);
+      });
+  }
+
+  // 이벤트 핸들러 등록
+  document.querySelectorAll('input[type="number"]').forEach((input) => {
+    input.addEventListener('input', (event) => {
+      const row = event.target.closest('tr');
+      if (!row) return;
+
+      const type = input.getAttribute('data-field').startsWith('departure') ? 'departure' : 'arrival';
+      calculateRemainingSeats(row, type);
+    });
+
+    input.addEventListener('blur', (event) => {
+      const row = event.target.closest('tr');
+      if (!row) return;
+
+      const field = event.target.getAttribute('data-field');
+      const value = parseInt(event.target.value || 0, 10);
+
+      updateServer(row, field, value);
+    });
+  });
 
 </script>
 
