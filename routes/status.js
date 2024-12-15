@@ -95,52 +95,92 @@ router.post('/update-block', async (req, res) => {
 
 // 블럭 수 업데이트
 router.post('/monthly/update-block', async (req, res) => {
-  const { updates } = req.body;
+  const { updates } = req.body; // 업데이트 데이터: [{ date, departure: { ecoBlock, bizBlock, firstBlock }, ... }]
 
   try {
+    // 모든 업데이트 데이터를 처리
     for (const update of updates) {
-      const { _id, departure, arrival } = update;
+      const { date, departure, arrival } = update;
 
-      // 예약 데이터 가져오기
-      const reservation = await Reservation.findById(_id);
-      if (!reservation) {
-        continue;
-      }
+      // 출항/입항 블럭 좌석 정보 업데이트
+      const reservations = await Reservation.find({
+        $or: [{ departureDate: date }, { arrivalDate: date }],
+      });
 
-      // 출항 블록 업데이트
-      if (departure) {
-        reservation.ship.eco = departure.ecoBlock || reservation.ship.eco;
-        reservation.ship.biz = departure.bizBlock || reservation.ship.biz;
-        reservation.ship.first = departure.firstBlock || reservation.ship.first;
-      }
+      // 좌석 데이터 업데이트 및 잔여 좌석 계산
+      reservations.forEach(async (reservation) => {
+        if (departure) {
+          reservation.dailyBlocks = reservation.dailyBlocks || [];
+          const departureBlock = {
+            date,
+            departure: {
+              ecoBlock: departure.ecoBlock,
+              bizBlock: departure.bizBlock,
+              firstBlock: departure.firstBlock,
+            },
+          };
 
-      // 도착 블록 업데이트
-      if (arrival) {
-        reservation.ship.eco = arrival.ecoBlock || reservation.ship.eco;
-        reservation.ship.biz = arrival.bizBlock || reservation.ship.biz;
-        reservation.ship.first = arrival.firstBlock || reservation.ship.first;
-      }
+          // 블럭 좌석 업데이트
+          const existingIndex = reservation.dailyBlocks.findIndex(
+            (block) => block.date === date
+          );
 
-      // 잔여 좌석 계산
-      reservation.remainingEconomySeats =
-        reservation.ship.eco - (reservation.economySeats || 0);
-      reservation.remainingBusinessSeats =
-        reservation.ship.biz - (reservation.businessSeats || 0);
-      reservation.remainingFirstSeats =
-        reservation.ship.first - (reservation.firstSeats || 0);
+          if (existingIndex >= 0) {
+            reservation.dailyBlocks[existingIndex].departure = departureBlock.departure;
+          } else {
+            reservation.dailyBlocks.push(departureBlock);
+          }
 
-      await reservation.save();
+          // 잔여 좌석 계산
+          reservation.remainingEconomySeats =
+            departure.ecoBlock - reservation.economySeats;
+          reservation.remainingBusinessSeats =
+            departure.bizBlock - reservation.businessSeats;
+          reservation.remainingFirstSeats =
+            departure.firstBlock - reservation.firstSeats;
+        }
+
+        if (arrival) {
+          const arrivalBlock = {
+            date,
+            arrival: {
+              ecoBlock: arrival.ecoBlock,
+              bizBlock: arrival.bizBlock,
+              firstBlock: arrival.firstBlock,
+            },
+          };
+
+          const existingIndex = reservation.dailyBlocks.findIndex(
+            (block) => block.date === date
+          );
+
+          if (existingIndex >= 0) {
+            reservation.dailyBlocks[existingIndex].arrival = arrivalBlock.arrival;
+          } else {
+            reservation.dailyBlocks.push(arrivalBlock);
+          }
+
+          // 잔여 좌석 계산
+          reservation.remainingEconomySeats =
+            arrival.ecoBlock - reservation.economySeats;
+          reservation.remainingBusinessSeats =
+            arrival.bizBlock - reservation.businessSeats;
+          reservation.remainingFirstSeats =
+            arrival.firstBlock - reservation.firstSeats;
+        }
+
+        await reservation.save(); // 저장
+      });
     }
 
-    res.json({ success: true, message: 'Block data updated successfully' });
+    res.json({ success: true, message: '블럭 데이터가 저장되었습니다.' });
   } catch (error) {
     console.error('Error updating block data:', error);
-    res.status(500).json({ success: false, message: 'Error updating block data' });
+    res.status(500).json({ success: false, message: '블럭 데이터 저장 중 오류' });
   }
 });
 
 
-  
 // 엑셀 다운로드
 router.get('/monthly/export', async (req, res) => {
   const { month } = req.query;
