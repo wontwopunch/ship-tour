@@ -128,6 +128,51 @@
     });
   });
 
+  // 실시간 잔여 좌석 업데이트
+  document.querySelectorAll('input[type="number"]').forEach((input) => {
+    input.addEventListener('input', (event) => {
+      const row = event.target.closest('tr');
+      if (row) calculateRemainingSeats(row);
+    });
+  });
+
+  // 실시간 서버 업데이트
+  document.querySelectorAll('input[type="number"]').forEach((input) => {
+    input.addEventListener('blur', (event) => {
+      const row = event.target.closest('tr');
+      if (!row) return;
+
+      const date = row.querySelector('td:first-child')?.innerText.trim();
+      const field = event.target.getAttribute('data-field');
+      const value = parseInt(event.target.value || 0, 10);
+
+      const updateData = {
+        date,
+        type: field.startsWith('departure') ? 'departure' : 'arrival',
+        key: field.split('.')[1],
+        value,
+      };
+
+      fetch('/status/update-block', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateData),
+      })
+        .then((response) => {
+          if (!response.ok) throw new Error('Failed to update block data');
+          return response.json();
+        })
+        .then((result) => {
+          if (!result.success) {
+            alert('실시간 업데이트 실패');
+          }
+        })
+        .catch((error) => {
+          console.error('실시간 업데이트 중 오류:', error);
+        });
+    });
+  });
+
   function saveBlockData() {
     const rows = document.querySelectorAll('tbody tr');
     const updates = [];
@@ -172,7 +217,6 @@
         console.error('Error saving block data:', error);
         alert('블럭 데이터 저장 중 오류가 발생했습니다.');
       });
-
   }
 
 
@@ -218,6 +262,11 @@
     remainingEcoCell.innerText = ecoBlock - economySeats;
     remainingBizCell.innerText = bizBlock - businessSeats;
     remainingFirstCell.innerText = firstBlock - firstSeats;
+
+    remainingEcoCell.style.color = (ecoBlock - economySeats) < 0 ? 'red' : 'inherit';
+    remainingBizCell.style.color = (bizBlock - businessSeats) < 0 ? 'red' : 'inherit';
+    remainingFirstCell.style.color = (firstBlock - firstSeats) < 0 ? 'red' : 'inherit';
+
   }
 
 

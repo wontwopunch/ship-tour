@@ -110,24 +110,50 @@ router.post('/monthly/update-block', async (req, res) => {
         continue;
       }
 
-      const reservations = await Reservation.find({
+      // 해당 날짜의 블럭 데이터를 업데이트하거나 새로 추가
+      const reservation = await Reservation.findOne({
         $or: [{ departureDate: date }, { arrivalDate: date }],
       });
 
-      for (const reservation of reservations) {
-        if (departure) {
-          reservation.departureEcoBlock = departure.ecoBlock || 0;
-          reservation.departureBizBlock = departure.bizBlock || 0;
-          reservation.departureFirstBlock = departure.firstBlock || 0;
-        }
+      if (reservation) {
+        // `dailyBlocks`에서 해당 날짜 찾기
+        const existingBlock = reservation.dailyBlocks.find(
+          (block) => block.date.toISOString().split('T')[0] === date
+        );
 
-        if (arrival) {
-          reservation.arrivalEcoBlock = arrival.ecoBlock || 0;
-          reservation.arrivalBizBlock = arrival.bizBlock || 0;
-          reservation.arrivalFirstBlock = arrival.firstBlock || 0;
+        if (existingBlock) {
+          // 기존 블럭 데이터 업데이트
+          if (departure) {
+            existingBlock.departure.ecoBlock = departure.ecoBlock || 0;
+            existingBlock.departure.bizBlock = departure.bizBlock || 0;
+            existingBlock.departure.firstBlock = departure.firstBlock || 0;
+          }
+
+          if (arrival) {
+            existingBlock.arrival.ecoBlock = arrival.ecoBlock || 0;
+            existingBlock.arrival.bizBlock = arrival.bizBlock || 0;
+            existingBlock.arrival.firstBlock = arrival.firstBlock || 0;
+          }
+        } else {
+          // 새 블럭 데이터 추가
+          reservation.dailyBlocks.push({
+            date,
+            departure: {
+              ecoBlock: departure?.ecoBlock || 0,
+              bizBlock: departure?.bizBlock || 0,
+              firstBlock: departure?.firstBlock || 0,
+            },
+            arrival: {
+              ecoBlock: arrival?.ecoBlock || 0,
+              bizBlock: arrival?.bizBlock || 0,
+              firstBlock: arrival?.firstBlock || 0,
+            },
+          });
         }
 
         await reservation.save();
+      } else {
+        console.warn(`No reservation found for date: ${date}`);
       }
     }
 
@@ -137,8 +163,6 @@ router.post('/monthly/update-block', async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error while updating block data' });
   }
 });
-
-
 
 
 
