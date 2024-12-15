@@ -12,6 +12,7 @@
     </select>
   </div>
   <button onclick="saveBlockData()">블럭 데이터 저장</button>
+
   <!-- 테이블 -->
   <div class="table-container">
     <table border="1">
@@ -24,22 +25,22 @@
         <tr>
           <th>월/일/요일</th>
           <th>예약 이코</th>
-          <th>예약 비즈</th>
-          <th>예약 퍼스</th>
           <th>블럭 이코</th>
-          <th>블럭 비즈</th>
-          <th>블럭 퍼스</th>
           <th>잔여 이코</th>
+          <th>예약 비즈</th>
+          <th>블럭 비즈</th>
           <th>잔여 비즈</th>
+          <th>예약 퍼스</th>
+          <th>블럭 퍼스</th>
           <th>잔여 퍼스</th>
           <th>예약 이코</th>
-          <th>예약 비즈</th>
-          <th>예약 퍼스</th>
           <th>블럭 이코</th>
-          <th>블럭 비즈</th>
-          <th>블럭 퍼스</th>
           <th>잔여 이코</th>
+          <th>예약 비즈</th>
+          <th>블럭 비즈</th>
           <th>잔여 비즈</th>
+          <th>예약 퍼스</th>
+          <th>블럭 퍼스</th>
           <th>잔여 퍼스</th>
         </tr>
       </thead>
@@ -51,26 +52,28 @@
               <%= row.date %> 
               (<%= ['일', '월', '화', '수', '목', '금', '토'][new Date(row.date).getDay()] %>)
             </td>
-        
+
             <!-- 포항출항 -->
-            <td data-field="departure.economy" class="economy-cell"><%= row.departure.economy || 0 %></td>
-            <td data-field="departure.bizBlock" class="block-cell"><input type="number" value="<%= row.departure.bizBlock || 0 %>"></td>
-            <td data-field="departure.remainingEco" class="remaining-cell">
-              <%= (row.departure.ecoBlock || 0) - (row.departure.economy || 0) %>
-            </td>
-            <td class="block-cell"><input type="number" value="<%= row.departure.ecoBlock || 0 %>" data-field="departure.ecoBlock"></td>
-            <td class="block-cell"><input type="number" value="<%= row.departure.bizBlock || 0 %>" data-field="departure.bizBlock"></td>
-            <td class="block-cell"><input type="number" value="<%= row.departure.firstBlock || 0 %>" data-field="departure.firstBlock"></td>
+            <td><%= row.departure.economy || 0 %></td>
+            <td><input type="number" value="<%= row.departure.ecoBlock || 0 %>" data-field="departure.ecoBlock" oninput="updateRemaining(this, 'departure', 'economy')"></td>
+            <td data-field="departure.remainingEco"><%= (row.departure.ecoBlock || 0) - (row.departure.economy || 0) %></td>
+            <td><%= row.departure.business || 0 %></td>
+            <td><input type="number" value="<%= row.departure.bizBlock || 0 %>" data-field="departure.bizBlock" oninput="updateRemaining(this, 'departure', 'business')"></td>
+            <td data-field="departure.remainingBiz"><%= (row.departure.bizBlock || 0) - (row.departure.business || 0) %></td>
+            <td><%= row.departure.first || 0 %></td>
+            <td><input type="number" value="<%= row.departure.firstBlock || 0 %>" data-field="departure.firstBlock" oninput="updateRemaining(this, 'departure', 'first')"></td>
+            <td data-field="departure.remainingFirst"><%= (row.departure.firstBlock || 0) - (row.departure.first || 0) %></td>
 
             <!-- 울릉출항 -->
-            <td data-field="arrival.economy" class="economy-cell"><%= row.arrival.economy || 0 %></td>
-            <td data-field="arrival.bizBlock" class="block-cell"><input type="number" value="<%= row.arrival.bizBlock || 0 %>"></td>
-            <td data-field="arrival.remainingEco" class="remaining-cell">
-              <%= (row.arrival.ecoBlock || 0) - (row.arrival.economy || 0) %>
-            </td>
-            <td class="block-cell"><input type="number" value="<%= row.arrival.ecoBlock || 0 %>" data-field="arrival.ecoBlock"></td>
-            <td class="block-cell"><input type="number" value="<%= row.arrival.bizBlock || 0 %>" data-field="arrival.bizBlock"></td>
-            <td class="block-cell"><input type="number" value="<%= row.arrival.firstBlock || 0 %>" data-field="arrival.firstBlock"></td>
+            <td><%= row.arrival.economy || 0 %></td>
+            <td><input type="number" value="<%= row.arrival.ecoBlock || 0 %>" data-field="arrival.ecoBlock" oninput="updateRemaining(this, 'arrival', 'economy')"></td>
+            <td data-field="arrival.remainingEco"><%= (row.arrival.ecoBlock || 0) - (row.arrival.economy || 0) %></td>
+            <td><%= row.arrival.business || 0 %></td>
+            <td><input type="number" value="<%= row.arrival.bizBlock || 0 %>" data-field="arrival.bizBlock" oninput="updateRemaining(this, 'arrival', 'business')"></td>
+            <td data-field="arrival.remainingBiz"><%= (row.arrival.bizBlock || 0) - (row.arrival.business || 0) %></td>
+            <td><%= row.arrival.first || 0 %></td>
+            <td><input type="number" value="<%= row.arrival.firstBlock || 0 %>" data-field="arrival.firstBlock" oninput="updateRemaining(this, 'arrival', 'first')"></td>
+            <td data-field="arrival.remainingFirst"><%= (row.arrival.firstBlock || 0) - (row.arrival.first || 0) %></td>
           </tr>
         <% }) %>
       </tbody>
@@ -80,84 +83,31 @@
 </div>
 
 <script>
-  // 필터 적용 함수
   function applyFilters() {
-  const month = document.getElementById('monthSelect').value;
-  window.location.href = `/status/monthly?month=${month}`;
-}
+    const month = document.getElementById('monthSelect').value;
+    window.location.href = `/status/monthly?month=${month}`;
+  }
 
   function downloadExcel() {
     const month = document.getElementById('monthSelect').value;
     window.location.href = `/status/monthly/export?month=${month}`;
   }
 
+  function updateRemaining(input, type, category) {
+    const row = input.closest('tr');
+    const blockValue = parseInt(input.value || 0, 10);
+    const reservedValue = parseInt(row.querySelector(`[data-field="${type}.${category}"]`).innerText || 0, 10);
+    const remainingCell = row.querySelector(`[data-field="${type}.remaining${capitalize(category)}"]`);
+    
+    if (remainingCell) {
+      remainingCell.innerText = blockValue - reservedValue;
+      remainingCell.style.color = (blockValue - reservedValue) < 0 ? 'red' : 'inherit';
+    }
+  }
 
-  // 실시간 업데이트
-  document.querySelectorAll('[contenteditable="true"]').forEach((cell) => {
-    cell.addEventListener('blur', (e) => {
-      const value = parseInt(e.target.innerText.trim(), 10) || 0;
-      const field = e.target.getAttribute('data-field');
-      const [type, key] = field.split('-');
-      const date = e.target.closest('tr').querySelector('td:first-child').innerText.trim();
-
-      fetch(`/status/update-block`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date, type, key, value }),
-      })
-        .then((response) => response.json())
-        .then((result) => {
-          if (!result.success) {
-            alert('업데이트 실패');
-          }
-        });
-    });
-  });
-
-  // 실시간 잔여 좌석 업데이트
-  document.querySelectorAll('input[type="number"]').forEach((input) => {
-    input.addEventListener('input', (event) => {
-      const row = event.target.closest('tr');
-      if (row) calculateRemainingSeats(row);
-    });
-  });
-
-  // 실시간 서버 업데이트
-  document.querySelectorAll('input[type="number"]').forEach((input) => {
-    input.addEventListener('blur', (event) => {
-      const row = event.target.closest('tr');
-      if (!row) return;
-
-      const date = row.querySelector('td:first-child')?.innerText.trim();
-      const field = event.target.getAttribute('data-field');
-      const value = parseInt(event.target.value || 0, 10);
-
-      const updateData = {
-        date,
-        type: field.startsWith('departure') ? 'departure' : 'arrival',
-        key: field.split('.')[1],
-        value,
-      };
-
-      fetch('/status/update-block', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updateData),
-      })
-        .then((response) => {
-          if (!response.ok) throw new Error('Failed to update block data');
-          return response.json();
-        })
-        .then((result) => {
-          if (!result.success) {
-            alert('실시간 업데이트 실패');
-          }
-        })
-        .catch((error) => {
-          console.error('실시간 업데이트 중 오류:', error);
-        });
-    });
-  });
+  function capitalize(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+  }
 
   function saveBlockData() {
     const rows = document.querySelectorAll('tbody tr');
@@ -165,7 +115,7 @@
 
     rows.forEach((row) => {
       const date = row.querySelector('td:first-child')?.innerText.trim();
-      if (!date) return; // Skip if no date found
+      if (!date) return;
 
       updates.push({
         date,
@@ -204,64 +154,6 @@
         alert('블럭 데이터 저장 중 오류가 발생했습니다.');
       });
   }
-
-
-  function calculateRemainingSeats(row) {
-    // Safely fetch all required elements
-    const ecoBlockInput = row.querySelector('[data-field="departure.ecoBlock"]');
-    const bizBlockInput = row.querySelector('[data-field="departure.bizBlock"]');
-    const firstBlockInput = row.querySelector('[data-field="departure.firstBlock"]');
-
-    const economySeatsCell = row.querySelector('[data-field="departure.economy"]');
-    const businessSeatsCell = row.querySelector('[data-field="departure.business"]');
-    const firstSeatsCell = row.querySelector('[data-field="departure.first"]');
-
-    const remainingEcoCell = row.querySelector('[data-field="departure.remainingEco"]');
-    const remainingBizCell = row.querySelector('[data-field="departure.remainingBiz"]');
-    const remainingFirstCell = row.querySelector('[data-field="departure.remainingFirst"]');
-
-    if (!ecoBlockInput || !economySeatsCell || !remainingEcoCell) {
-      console.error('Missing elements:', { row });
-      return;
-    }
-
-    // if (
-    //   !ecoBlockInput ||
-    //   !bizBlockInput ||
-    //   !firstBlockInput ||
-    //   !economySeatsCell ||
-    //   !businessSeatsCell ||
-    //   !firstSeatsCell ||
-    //   !remainingEcoCell ||
-    //   !remainingBizCell ||
-    //   !remainingFirstCell
-    // ) {
-    //   console.error('One or more required elements are missing in calculateRemainingSeats.');
-    //   return; // Exit the function to prevent further errors
-    // }
-
-    // Perform calculations
-    const ecoBlock = parseInt(ecoBlockInput.value || 0, 10);
-    const bizBlock = parseInt(bizBlockInput.value || 0, 10);
-    const firstBlock = parseInt(firstBlockInput.value || 0, 10);
-
-    const economySeats = parseInt(economySeatsCell.innerText || 0, 10);
-    const businessSeats = parseInt(businessSeatsCell.innerText || 0, 10);
-    const firstSeats = parseInt(firstSeatsCell.innerText || 0, 10);
-
-    // Update remaining seats
-    remainingEcoCell.innerText = ecoBlock - economySeats;
-    remainingBizCell.innerText = bizBlock - businessSeats;
-    remainingFirstCell.innerText = firstBlock - firstSeats;
-
-    remainingEcoCell.style.color = (ecoBlock - economySeats) < 0 ? 'red' : 'inherit';
-    remainingBizCell.style.color = (bizBlock - businessSeats) < 0 ? 'red' : 'inherit';
-    remainingFirstCell.style.color = (firstBlock - firstSeats) < 0 ? 'red' : 'inherit';
-
-  }
-
-
-
 </script>
 
 <style>
@@ -314,44 +206,4 @@
   button:hover {
     background-color: #218838;
   }
-
-  .table-container {
-  margin-top: 20px;
-  overflow-x: auto; /* 가로 스크롤 허용 */
-  }
-
-  table {
-    width: max-content; /* 테이블이 내용에 맞게 확장됨 */
-    border-collapse: collapse;
-    text-align: center;
-  }
-
-  table th {
-    background-color: #007bff;
-    color: white;
-    padding: 8px;
-  }
-
-  table td {
-    padding: 6px; /* 간격을 줄임 */
-    font-size: 14px; /* 텍스트 크기 조정 */
-    white-space: nowrap; /* 텍스트 줄바꿈 방지 */
-  }
-
-  .block-cell {
-    background-color: #ffc8c8; /* 블럭 셀의 배경을 부드러운 빨간색으로 설정 */
-  }
-
-  .remaining-cell {
-    background-color: #d1c4f9; /* 잔여 셀의 배경을 부드러운 보라색으로 설정 */
-  }
-
-  table tr:nth-child(even) {
-    background-color: #f9f9f9;
-  }
-
-  table tr:hover {
-    background-color: #e0f7fa; /* 행에 마우스를 올렸을 때 색상 변경 */
-  }
-
 </style>
