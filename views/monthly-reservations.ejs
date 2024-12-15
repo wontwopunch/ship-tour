@@ -73,13 +73,9 @@
               <td>
                 <select data-field="ship">
                   <option value="" disabled <%= !reservation.ship ? 'selected' : '' %>>선박 선택</option>
-                  <% if (ships && ships.length > 0) { %>
-                    <% ships.forEach(ship => { %>
-                      <option value="<%= ship._id %>" <%= reservation.ship && reservation.ship._id == ship._id ? 'selected' : '' %>><%= ship.name %></option>
-                    <% }) %>
-                  <% } else { %>
-                    <option value="" disabled>선박 정보 없음</option>
-                  <% } %>
+                  <% ships.forEach(ship => { %>
+                    <option value="<%= ship._id %>" <%= reservation.ship && reservation.ship._id == ship._id ? 'selected' : '' %>><%= ship.name %></option>
+                  <% }) %>
                 </select>
               </td>
               <td contenteditable="true" data-field="listStatus"><%= reservation.listStatus || '' %></td>
@@ -294,19 +290,13 @@
     const table = document.getElementById('reservationTable').getElementsByTagName('tbody')[0];
     const newRow = table.insertRow(0);
 
-    const shipOptions = `
-      <% ships.forEach(ship => { %>
-        <option value="<%= ship._id %>"><%= ship.name %></option>
-      <% }) %>
-    `;
+    const shipOptions = ships.map(ship => `<option value="${ship._id}">${ship.name}</option>`).join('');
 
     newRow.innerHTML = `
       <td>
         <select data-field="ship">
-          <option value="" disabled <%= !reservation.ship ? 'selected' : '' %>>선박 선택</option>
-          <% ships.forEach(ship => { %>
-            <option value="<%= ship._id %>" <%= reservation.ship && reservation.ship._id == ship._id ? 'selected' : '' %>><%= ship.name %></option>
-          <% }) %>
+          <option value="" disabled selected>선박 선택</option>
+          ${shipOptions}
         </select>
       </td>
       <td contenteditable="true" data-field="listStatus"></td>
@@ -317,32 +307,33 @@
       <td contenteditable="true" data-field="reservedBy2"></td>
       <td contenteditable="true" data-field="contact"></td>
       <td contenteditable="true" data-field="product"></td>
-      <td contenteditable="true" data-field="totalSeats"></td>
-      <td contenteditable="true" data-field="economySeats"></td>
-      <td contenteditable="true" data-field="businessSeats"></td>
-      <td contenteditable="true" data-field="firstSeats"></td>
+      <td contenteditable="true" data-field="totalSeats">0</td>
+      <td contenteditable="true" data-field="economySeats">0</td>
+      <td contenteditable="true" data-field="businessSeats">0</td>
+      <td contenteditable="true" data-field="firstSeats">0</td>
       <td><input type="date" data-field="dokdoTourDate"></td>
-      <td contenteditable="true" data-field="dokdoTourPeople"></td>
+      <td contenteditable="true" data-field="dokdoTourPeople">0</td>
       <td contenteditable="true" data-field="dokdoTourTime"></td>
       <td contenteditable="true" data-field="dokdoTourDetails"></td>
-      <td contenteditable="true" data-field="totalPrice"></td>
-      <td contenteditable="true" data-field="deposit"></td>
-      <td contenteditable="true" data-field="balance"></td>
+      <td contenteditable="true" data-field="totalPrice">0</td>
+      <td contenteditable="true" data-field="deposit">0</td>
+      <td contenteditable="true" data-field="balance">0</td>
       <td contenteditable="true" data-field="rentalCar"></td>
       <td contenteditable="true" data-field="accommodation"></td>
       <td contenteditable="true" data-field="others"></td>
-      <td contenteditable="true" data-field="departureFee"></td>
-      <td contenteditable="true" data-field="arrivalFee"></td>
-      <td contenteditable="true" data-field="dokdoFee"></td>
-      <td contenteditable="true" data-field="restaurantFee"></td>
-      <td contenteditable="true" data-field="eventFee"></td>
-      <td contenteditable="true" data-field="otherFee"></td>
-      <td contenteditable="true" data-field="refund"></td>
-      <td contenteditable="true" data-field="totalSettlement"></td>
-      <td contenteditable="true" data-field="profit"></td>
+      <td contenteditable="true" data-field="departureFee">0</td>
+      <td contenteditable="true" data-field="arrivalFee">0</td>
+      <td contenteditable="true" data-field="dokdoFee">0</td>
+      <td contenteditable="true" data-field="restaurantFee">0</td>
+      <td contenteditable="true" data-field="eventFee">0</td>
+      <td contenteditable="true" data-field="otherFee">0</td>
+      <td contenteditable="true" data-field="refund">0</td>
+      <td contenteditable="true" data-field="totalSettlement">0</td>
+      <td contenteditable="true" data-field="profit">0</td>
       <td><button onclick="deleteRow(null)">삭제</button></td>
     `;
   }
+
 
   function deleteRow(id) {
     if (!confirm('이 행을 삭제하시겠습니까?')) return;
