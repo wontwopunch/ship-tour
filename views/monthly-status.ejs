@@ -150,18 +150,21 @@
   function saveBlockData() {
     const rows = document.querySelectorAll('tbody tr');
     const updates = Array.from(rows).map((row) => {
-      const dateElement = row.querySelector('td:first-child');
-      const date = dateElement?.innerText.trim();
-      const reservationId = row.getAttribute('data-reservation-id'); // Reservation ID
+      const dateCell = row.querySelector('td:first-child');
+      const reservationId = row.getAttribute('data-reservation-id');
 
-      if (!date || !reservationId) {
-        console.warn('Skipping row due to missing date or reservationId:', { date, reservationId });
-        return null;
+      if (!dateCell || !reservationId) {
+        console.warn('Skipping row due to missing date or reservationId:', {
+          date: dateCell?.innerText.trim(),
+          reservationId,
+        });
+        return null; // 유효하지 않은 행 건너뜀
       }
 
+      const date = dateCell.innerText.trim().split(' ')[0]; // 날짜만 가져오기
       return {
         reservationId,
-        date: date.split(' ')[0], // "2024-12-16 (월)" -> "2024-12-16"
+        date,
         departure: {
           ecoBlock: parseInt(row.querySelector('[data-field="departure.ecoBlock"]')?.innerText || 0, 10),
           bizBlock: parseInt(row.querySelector('[data-field="departure.bizBlock"]')?.innerText || 0, 10),
@@ -173,15 +176,13 @@
           firstBlock: parseInt(row.querySelector('[data-field="arrival.firstBlock"]')?.innerText || 0, 10),
         },
       };
-    }).filter(Boolean);
+    }).filter(Boolean); // 유효한 행만 필터링
 
     if (updates.length === 0) {
       console.warn('No updates to send. Make sure rows contain valid data.');
-      alert('저장할 데이터가 없습니다.');
+      alert('유효한 데이터가 없습니다. 날짜와 예약 ID를 확인하세요.');
       return;
     }
-
-    console.log('Payload for update:', JSON.stringify({ updates }, null, 2));
 
     fetch('/status/monthly/update-block', {
       method: 'POST',
@@ -190,20 +191,18 @@
     })
       .then((response) => response.json())
       .then((data) => {
-        console.log('Server Response:', data);
         if (data.success) {
           alert('블럭 데이터가 저장되었습니다.');
-          location.reload();
+          location.reload(); // 페이지 새로고침
         } else {
           alert('블럭 데이터 저장 중 오류가 발생했습니다.');
         }
       })
       .catch((error) => {
         console.error('Error saving block data:', error);
+        alert('저장 중 오류가 발생했습니다. 콘솔을 확인하세요.');
       });
   }
-
-
 
   function updateServer(row, field, value) {
     const date = row.querySelector('td:first-child')?.innerText.trim();
