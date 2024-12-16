@@ -81,7 +81,6 @@ router.get('/monthly', async (req, res) => {
 
 
 // 블럭 데이터 업데이트
-// 블럭 데이터 업데이트
 router.post('/monthly/update-block', async (req, res) => {
   const { updates } = req.body;
 
@@ -101,24 +100,20 @@ router.post('/monthly/update-block', async (req, res) => {
       }
 
       // 날짜별 예약 데이터 검색
-      let reservation = await Reservation.findOne({
+      const reservation = await Reservation.findOne({
         $or: [{ departureDate: date }, { arrivalDate: date }],
       });
 
       if (!reservation) {
-        console.log(`No reservation found for date: ${date}, creating a new one.`);
-        reservation = new Reservation({
-          departureDate: date,
-          arrivalDate: date,
-          dailyBlocks: [],
-        });
+        console.warn(`No reservation found for date: ${date}`);
+        continue;
       }
 
       if (!reservation.dailyBlocks) {
         reservation.dailyBlocks = [];
       }
 
-      // 기존 블럭 데이터 확인
+      // 기존 블럭 데이터 확인 및 업데이트
       const existingBlockIndex = reservation.dailyBlocks.findIndex(
         (block) => block.date.toISOString().split('T')[0] === date
       );
