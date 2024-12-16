@@ -152,7 +152,7 @@
     const rows = document.querySelectorAll('tbody tr');
     const updates = Array.from(rows).map((row) => {
       const date = row.querySelector('td:first-child')?.innerText.trim();
-      if (!date) return null; // 날짜가 없으면 건너뜀
+      if (!date) return null;
 
       // 각 필드 데이터를 숫자로 변환
       const departureEcoBlock = parseInt(row.querySelector('[data-field="departure.ecoBlock"]')?.textContent || 0, 10);
@@ -163,26 +163,28 @@
       const arrivalBizBlock = parseInt(row.querySelector('[data-field="arrival.bizBlock"]')?.textContent || 0, 10);
       const arrivalFirstBlock = parseInt(row.querySelector('[data-field="arrival.firstBlock"]')?.textContent || 0, 10);
 
-      // balance 필드 기본값 설정
-      const balance = parseInt(row.querySelector('[data-field="balance"]')?.textContent || 0, 10);
+      // 금액 관련 데이터 가져오기
+      const totalPrice = parseInt(row.querySelector('[data-field="totalPrice"]')?.textContent || 0, 10);
+      const deposit = parseInt(row.querySelector('[data-field="deposit"]')?.textContent || 0, 10);
 
       return {
         date,
         departure: {
-          ecoBlock: departureEcoBlock,
-          bizBlock: departureBizBlock,
-          firstBlock: departureFirstBlock,
+          ecoBlock: isNaN(departureEcoBlock) ? 0 : departureEcoBlock,
+          bizBlock: isNaN(departureBizBlock) ? 0 : departureBizBlock,
+          firstBlock: isNaN(departureFirstBlock) ? 0 : departureFirstBlock,
         },
         arrival: {
-          ecoBlock: arrivalEcoBlock,
-          bizBlock: arrivalBizBlock,
-          firstBlock: arrivalFirstBlock,
+          ecoBlock: isNaN(arrivalEcoBlock) ? 0 : arrivalEcoBlock,
+          bizBlock: isNaN(arrivalBizBlock) ? 0 : arrivalBizBlock,
+          firstBlock: isNaN(arrivalFirstBlock) ? 0 : arrivalFirstBlock,
         },
-        balance, // balance 데이터 추가
+        totalPrice: isNaN(totalPrice) ? 0 : totalPrice,
+        deposit: isNaN(deposit) ? 0 : deposit,
       };
-    }).filter(Boolean); // 유효한 업데이트만 필터링
+    }).filter(Boolean);
 
-    console.log('Payload for update:', updates); // 요청 데이터 디버깅
+    console.log('Payload for update:', updates);
 
     fetch('/status/monthly/update-block', {
       method: 'POST',

@@ -91,14 +91,13 @@ router.post('/monthly/update-block', async (req, res) => {
 
   try {
     for (const update of updates) {
-      const { date, departure = {}, arrival = {}, balance } = update;
+      const { date, departure = {}, arrival = {}, totalPrice, deposit } = update;
 
       if (!date) {
         console.warn('Skipping update due to missing date:', update);
         continue;
       }
 
-      // 기본값으로 설정된 값 검증
       const sanitizedDeparture = {
         ecoBlock: !isNaN(Number(departure.ecoBlock)) ? Number(departure.ecoBlock) : 0,
         bizBlock: !isNaN(Number(departure.bizBlock)) ? Number(departure.bizBlock) : 0,
@@ -111,10 +110,11 @@ router.post('/monthly/update-block', async (req, res) => {
         firstBlock: !isNaN(Number(arrival.firstBlock)) ? Number(arrival.firstBlock) : 0,
       };
 
-      // balance 필드에 대한 검증 및 기본값 설정
-      const sanitizedBalance = !isNaN(Number(balance)) ? Number(balance) : 0;
+      // balance 계산
+      const calculatedBalance = !isNaN(Number(totalPrice)) && !isNaN(Number(deposit))
+        ? Number(totalPrice) - Number(deposit)
+        : 0;
 
-      // MongoDB 업데이트
       const result = await Reservation.updateOne(
         { "dailyBlocks.date": new Date(date) },
         {
@@ -125,7 +125,7 @@ router.post('/monthly/update-block', async (req, res) => {
             "dailyBlocks.$.arrival.ecoBlock": sanitizedArrival.ecoBlock,
             "dailyBlocks.$.arrival.bizBlock": sanitizedArrival.bizBlock,
             "dailyBlocks.$.arrival.firstBlock": sanitizedArrival.firstBlock,
-            balance: sanitizedBalance, // balance 업데이트 추가
+            balance: calculatedBalance, // balance 값 명시적으로 설정
           },
         },
         { upsert: true }
@@ -140,7 +140,6 @@ router.post('/monthly/update-block', async (req, res) => {
     res.status(500).json({ success: false, message: 'Error updating data: ' + error.message });
   }
 });
-
 
 
 
