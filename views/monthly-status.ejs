@@ -101,22 +101,66 @@
     const remainingBiz = row.querySelector(`[data-field="${type}.remainingBiz"]`);
     const remainingFirst = row.querySelector(`[data-field="${type}.remainingFirst"]`);
 
+    // Debugging DOM references
+    console.log('Economy Input:', economyInput);
+    console.log('Business Input:', businessInput);
+    console.log('First Input:', firstInput);
+
+    console.log('Economy Reserved:', economyReserved);
+    console.log('Business Reserved:', businessReserved);
+    console.log('First Reserved:', firstReserved);
+
+    console.log('Remaining Eco:', remainingEco);
+    console.log('Remaining Biz:', remainingBiz);
+    console.log('Remaining First:', remainingFirst);
+
     if (!economyInput || !businessInput || !firstInput || !economyReserved || !businessReserved || !firstReserved || !remainingEco || !remainingBiz || !remainingFirst) {
       console.error(`Missing elements for type ${type}`);
       return;
     }
 
+    // Perform calculations
     remainingEco.innerText = parseInt(economyInput.value || 0, 10) - parseInt(economyReserved.innerText || 0, 10);
     remainingBiz.innerText = parseInt(businessInput.value || 0, 10) - parseInt(businessReserved.innerText || 0, 10);
     remainingFirst.innerText = parseInt(firstInput.value || 0, 10) - parseInt(firstReserved.innerText || 0, 10);
+
+    // Optional: Highlight negative values
+    remainingEco.style.color = remainingEco.innerText < 0 ? 'red' : 'inherit';
+    remainingBiz.style.color = remainingBiz.innerText < 0 ? 'red' : 'inherit';
+    remainingFirst.style.color = remainingFirst.innerText < 0 ? 'red' : 'inherit';
   }
-  
+
+  document.querySelectorAll('input[type="number"]').forEach(input => {
+    input.addEventListener('input', (event) => {
+      const row = event.target.closest('tr');
+      if (!row) {
+        console.error('Row not found for input event.');
+        return;
+      }
+      const type = input.getAttribute('data-field').startsWith('departure') ? 'departure' : 'arrival';
+      console.log(`Calculating remaining seats for ${type}...`);
+      calculateRemainingSeats(row, type);
+    });
+
+    input.addEventListener('blur', (event) => {
+      const row = event.target.closest('tr');
+      if (!row) {
+        console.error('Row not found for blur event.');
+        return;
+      }
+      const field = event.target.getAttribute('data-field');
+      const value = parseInt(event.target.value || 0, 10);
+      console.log(`Updating server with field: ${field}, value: ${value}`);
+      updateServer(row, field, value);
+    });
+  });
+
+
   function saveBlockData() {
     const rows = document.querySelectorAll('tbody tr');
     const updates = Array.from(rows).map((row) => {
       const date = row.querySelector('td:first-child')?.innerText.trim();
       if (!date) return null;
-
       return {
         date,
         departure: {
@@ -132,12 +176,15 @@
       };
     }).filter(Boolean);
 
+    console.log('Updates payload:', updates);
+
     fetch('/status/monthly/update-block', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ updates }),
     })
       .then((response) => {
+        console.log('Server response:', response);
         if (!response.ok) throw new Error('Failed to update block data');
         return response.json();
       })
@@ -153,6 +200,7 @@
         console.error('Error saving block data:', error);
       });
   }
+
 </script>
 
 <style>

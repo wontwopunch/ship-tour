@@ -84,6 +84,8 @@ router.get('/monthly', async (req, res) => {
 router.post('/monthly/update-block', async (req, res) => {
   const { updates } = req.body;
 
+  console.log('Received updates:', JSON.stringify(updates, null, 2));
+
   if (!Array.isArray(updates)) {
     return res.status(400).json({ success: false, message: 'Invalid input data' });
   }
