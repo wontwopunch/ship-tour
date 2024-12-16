@@ -101,34 +101,24 @@
     const remainingBiz = row.querySelector(`[data-field="${type}.remainingBiz"]`);
     const remainingFirst = row.querySelector(`[data-field="${type}.remainingFirst"]`);
 
-    // Debugging DOM references
-    console.log('Economy Input:', economyInput);
-    console.log('Business Input:', businessInput);
-    console.log('First Input:', firstInput);
-
-    console.log('Economy Reserved:', economyReserved);
-    console.log('Business Reserved:', businessReserved);
-    console.log('First Reserved:', firstReserved);
-
-    console.log('Remaining Eco:', remainingEco);
-    console.log('Remaining Biz:', remainingBiz);
-    console.log('Remaining First:', remainingFirst);
-
-    if (!economyInput || !businessInput || !firstInput || !economyReserved || !businessReserved || !firstReserved || !remainingEco || !remainingBiz || !remainingFirst) {
-      console.error(`Missing elements for type ${type}`);
-      return;
+    if (!economyReserved || !businessReserved || !firstReserved) {
+      console.error(`Missing reserved fields for type: ${type}`);
+      console.error(`Economy Reserved: ${economyReserved}`);
+      console.error(`Business Reserved: ${businessReserved}`);
+      console.error(`First Reserved: ${firstReserved}`);
+      return; // 해당 엘리먼트가 없으면 계산 중단
     }
 
-    // Perform calculations
+    // 계산 로직
     remainingEco.innerText = parseInt(economyInput.value || 0, 10) - parseInt(economyReserved.innerText || 0, 10);
     remainingBiz.innerText = parseInt(businessInput.value || 0, 10) - parseInt(businessReserved.innerText || 0, 10);
     remainingFirst.innerText = parseInt(firstInput.value || 0, 10) - parseInt(firstReserved.innerText || 0, 10);
 
-    // Optional: Highlight negative values
     remainingEco.style.color = remainingEco.innerText < 0 ? 'red' : 'inherit';
     remainingBiz.style.color = remainingBiz.innerText < 0 ? 'red' : 'inherit';
     remainingFirst.style.color = remainingFirst.innerText < 0 ? 'red' : 'inherit';
   }
+
 
   document.querySelectorAll('input[type="number"]').forEach(input => {
     input.addEventListener('input', (event) => {
@@ -200,6 +190,39 @@
         console.error('Error saving block data:', error);
       });
   }
+
+  function updateServer(row, field, value) {
+    const date = row.querySelector('td:first-child')?.innerText.trim();
+    if (!date) {
+      console.error('Date not found in row');
+      return;
+    }
+
+    fetch('/status/monthly/update-block', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        updates: [
+          {
+            date,
+            [field]: value,
+          },
+        ],
+      }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          console.log('Server update successful:', data.message);
+        } else {
+          console.error('Server update failed:', data.message);
+        }
+      })
+      .catch((error) => {
+        console.error('Error updating server:', error);
+      });
+  }
+
 
 </script>
 
