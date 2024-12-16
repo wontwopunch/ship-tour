@@ -4,10 +4,10 @@ const reservationSchema = new mongoose.Schema(
   {
     // 기본정보
     ship: { type: mongoose.Schema.Types.ObjectId, ref: 'Ship', required: true },
-    listStatus: { 
-        type: String, 
-        default: '', 
-        trim: true 
+    listStatus: {
+      type: String,
+      default: '',
+      trim: true,
     },
     contractDate: { type: Date, required: true, default: Date.now },
     departureDate: { type: Date, required: true, default: Date.now },
@@ -34,6 +34,7 @@ const reservationSchema = new mongoose.Schema(
     deposit: { type: Number, required: true, default: 0 },
     balance: {
       type: Number,
+      default: 0, // 명시적 기본값 설정
     },
 
     // 예약관리
@@ -51,6 +52,7 @@ const reservationSchema = new mongoose.Schema(
     refund: { type: Number, default: 0 },
     totalSettlement: {
       type: Number,
+      default: 0, // 명시적 기본값 설정
     },
     profit: {
       type: Number,
@@ -60,7 +62,7 @@ const reservationSchema = new mongoose.Schema(
         return totalPrice - totalSettlement;
       },
     },
-    
+
     // 날짜별 블럭 좌석 정보
     dailyBlocks: [
       {

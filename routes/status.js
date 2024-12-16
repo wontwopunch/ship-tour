@@ -110,7 +110,6 @@ router.post('/monthly/update-block', async (req, res) => {
         firstBlock: !isNaN(Number(arrival.firstBlock)) ? Number(arrival.firstBlock) : 0,
       };
 
-      // Reservation 데이터 가져오기
       const reservation = await Reservation.findOne({
         "dailyBlocks.date": new Date(date),
       });
@@ -132,22 +131,21 @@ router.post('/monthly/update-block', async (req, res) => {
 
         // 총 정산값 계산
         totalSettlement =
-          departureFee +
-          arrivalFee +
-          dokdoFee +
-          restaurantFee +
-          eventFee +
-          otherFee -
-          refund;
+          (departureFee || 0) +
+          (arrivalFee || 0) +
+          (dokdoFee || 0) +
+          (restaurantFee || 0) +
+          (eventFee || 0) +
+          (otherFee || 0) -
+          (refund || 0);
 
         totalSettlement = isNaN(totalSettlement) ? 0 : totalSettlement;
 
-        // profit 값 계산
+        // profit 계산
         profit = totalPrice - totalSettlement;
         profit = isNaN(profit) ? 0 : profit;
       }
 
-      // MongoDB 업데이트
       const result = await Reservation.updateOne(
         { "dailyBlocks.date": new Date(date) },
         {
@@ -158,8 +156,8 @@ router.post('/monthly/update-block', async (req, res) => {
             "dailyBlocks.$.arrival.ecoBlock": sanitizedArrival.ecoBlock,
             "dailyBlocks.$.arrival.bizBlock": sanitizedArrival.bizBlock,
             "dailyBlocks.$.arrival.firstBlock": sanitizedArrival.firstBlock,
-            totalSettlement, // 총 정산값 업데이트
-            profit, // profit 값 업데이트
+            totalSettlement, // 총 정산값 저장
+            profit, // 이익값 저장
           },
         },
         { upsert: true }
