@@ -47,85 +47,28 @@
       <tbody>
         <% data.forEach(row => { %>
           <tr>
-            <!-- 날짜 -->
             <td>
-              <%= row.date %> 
+              <%= row.date %>
               (<%= ['일', '월', '화', '수', '목', '금', '토'][new Date(row.date).getDay()] %>)
             </td>
-            <!-- 포항출항 -->
             <td data-field="departure.economy"><%= row.departure.economy || 0 %></td>
             <td data-field="departure.business"><%= row.departure.business || 0 %></td>
             <td data-field="departure.first"><%= row.departure.first || 0 %></td>
-            <td>
-              <input 
-                type="number" 
-                value="<%= row.departure.ecoBlock || 0 %>" 
-                data-field="departure.ecoBlock"
-                min="0"
-              >
-            </td>
-            <td>
-              <input 
-                type="number" 
-                value="<%= row.departure.bizBlock || 0 %>" 
-                data-field="departure.bizBlock"
-                min="0"
-              >
-            </td>
-            <td>
-              <input 
-                type="number" 
-                value="<%= row.departure.firstBlock || 0 %>" 
-                data-field="departure.firstBlock"
-                min="0"
-              >
-            </td>
-            <td data-field="departure.remainingEco">
-              <%= (row.departure.ecoBlock || 0) - (row.departure.economy || 0) %>
-            </td>
-            <td data-field="departure.remainingBiz">
-              <%= (row.departure.bizBlock || 0) - (row.departure.business || 0) %>
-            </td>
-            <td data-field="departure.remainingFirst">
-              <%= (row.departure.firstBlock || 0) - (row.departure.first || 0) %>
-            </td>
-            <!-- 울릉출항 -->
+            <td data-editable="true" data-field="departure.ecoBlock"><%= row.departure.ecoBlock || 0 %></td>
+            <td data-editable="true" data-field="departure.bizBlock"><%= row.departure.bizBlock || 0 %></td>
+            <td data-editable="true" data-field="departure.firstBlock"><%= row.departure.firstBlock || 0 %></td>
+            <td data-field="departure.remainingEco"><%= (row.departure.ecoBlock || 0) - (row.departure.economy || 0) %></td>
+            <td data-field="departure.remainingBiz"><%= (row.departure.bizBlock || 0) - (row.departure.business || 0) %></td>
+            <td data-field="departure.remainingFirst"><%= (row.departure.firstBlock || 0) - (row.departure.first || 0) %></td>
             <td data-field="arrival.economy"><%= row.arrival.economy || 0 %></td>
             <td data-field="arrival.business"><%= row.arrival.business || 0 %></td>
             <td data-field="arrival.first"><%= row.arrival.first || 0 %></td>
-            <td>
-              <input 
-                type="number" 
-                value="<%= row.arrival.ecoBlock || 0 %>" 
-                data-field="arrival.ecoBlock"
-                min="0"
-              >
-            </td>
-            <td>
-              <input 
-                type="number" 
-                value="<%= row.arrival.bizBlock || 0 %>" 
-                data-field="arrival.bizBlock"
-                min="0"
-              >
-            </td>
-            <td>
-              <input 
-                type="number" 
-                value="<%= row.arrival.firstBlock || 0 %>" 
-                data-field="arrival.firstBlock"
-                min="0"
-              >
-            </td>
-            <td data-field="arrival.remainingEco">
-              <%= (row.arrival.ecoBlock || 0) - (row.arrival.economy || 0) %>
-            </td>
-            <td data-field="arrival.remainingBiz">
-              <%= (row.arrival.bizBlock || 0) - (row.arrival.business || 0) %>
-            </td>
-            <td data-field="arrival.remainingFirst">
-              <%= (row.arrival.firstBlock || 0) - (row.arrival.first || 0) %>
-            </td>
+            <td data-editable="true" data-field="arrival.ecoBlock"><%= row.arrival.ecoBlock || 0 %></td>
+            <td data-editable="true" data-field="arrival.bizBlock"><%= row.arrival.bizBlock || 0 %></td>
+            <td data-editable="true" data-field="arrival.firstBlock"><%= row.arrival.firstBlock || 0 %></td>
+            <td data-field="arrival.remainingEco"><%= (row.arrival.ecoBlock || 0) - (row.arrival.economy || 0) %></td>
+            <td data-field="arrival.remainingBiz"><%= (row.arrival.bizBlock || 0) - (row.arrival.business || 0) %></td>
+            <td data-field="arrival.remainingFirst"><%= (row.arrival.firstBlock || 0) - (row.arrival.first || 0) %></td>
           </tr>
         <% }) %>
       </tbody>
@@ -158,61 +101,50 @@
     const remainingBiz = row.querySelector(`[data-field="${type}.remainingBiz"]`);
     const remainingFirst = row.querySelector(`[data-field="${type}.remainingFirst"]`);
 
-    // 디버깅 로그 추가
-    console.log(`${type} Calculation Debugging:`);
-    console.log('Economy Input:', economyInput);
-    console.log('Business Input:', businessInput);
-    console.log('First Input:', firstInput);
-    console.log('Economy Reserved:', economyReserved);
-    console.log('Business Reserved:', businessReserved);
-    console.log('First Reserved:', firstReserved);
-
-    if (!economyInput || !businessInput || !firstInput || !economyReserved || !businessReserved || !firstReserved) {
-      console.error(`Missing reserved fields for type: ${type}`);
-      return; // 필수 필드가 없으면 계산 중단
-    }
-
-    // 계산 로직
-    remainingEco.innerText = parseInt(economyInput.value || 0, 10) - parseInt(economyReserved.innerText || 0, 10);
-    remainingBiz.innerText = parseInt(businessInput.value || 0, 10) - parseInt(businessReserved.innerText || 0, 10);
-    remainingFirst.innerText = parseInt(firstInput.value || 0, 10) - parseInt(firstReserved.innerText || 0, 10);
-
-    // 색상 적용
-    remainingEco.style.color = parseInt(remainingEco.innerText, 10) < 0 ? 'red' : 'inherit';
-    remainingBiz.style.color = parseInt(remainingBiz.innerText, 10) < 0 ? 'red' : 'inherit';
-    remainingFirst.style.color = parseInt(remainingFirst.innerText, 10) < 0 ? 'red' : 'inherit';
+    // 값 계산 및 갱신
+    remainingEco.innerText = parseInt(economyInput.innerText || 0, 10) - parseInt(economyReserved.innerText || 0, 10);
+    remainingBiz.innerText = parseInt(businessInput.innerText || 0, 10) - parseInt(businessReserved.innerText || 0, 10);
+    remainingFirst.innerText = parseInt(firstInput.innerText || 0, 10) - parseInt(firstReserved.innerText || 0, 10);
   }
 
 
-  document.querySelectorAll('input[type="number"]').forEach(input => {
-    input.addEventListener('input', (event) => {
-      const row = event.target.closest('tr');
-      if (!row) {
-        console.error('Row not found for input event.');
-        return;
-      }
-      const type = input.getAttribute('data-field').startsWith('departure') ? 'departure' : 'arrival';
-      console.log(`Calculating remaining seats for ${type}...`);
-      calculateRemainingSeats(row, type);
-    });
+  document.querySelectorAll('td[data-editable]').forEach(cell => {
+    cell.addEventListener('click', (event) => {
+      const currentValue = cell.innerText.trim();
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = currentValue;
+      input.style.width = '100%';
 
-    input.addEventListener('blur', (event) => {
-      const row = event.target.closest('tr');
-      if (!row) {
-        console.error('Row not found for blur event.');
-        return;
-      }
-      const field = event.target.getAttribute('data-field');
-      let value = parseInt(event.target.value || 0, 10);
+      // 셀 클릭 시 기존 값 숨기고 입력 필드 표시
+      cell.innerHTML = '';
+      cell.appendChild(input);
+      input.focus();
 
-      // NaN 방지
-      if (isNaN(value) || value < 0) {
-        value = 0;
-        event.target.value = value; // UI에도 동기화
-      }
+      // 입력 완료 시 처리
+      input.addEventListener('blur', () => {
+        let value = parseInt(input.value, 10);
+        if (isNaN(value) || value < 0) value = 0; // 숫자 검증 및 기본값 처리
 
-      console.log(`Updating server with field: ${field}, value: ${value}`);
-      updateServer(row, field, value);
+        // 셀 값 업데이트
+        cell.innerText = value;
+
+        // 서버에 업데이트
+        const field = cell.getAttribute('data-field');
+        const row = cell.closest('tr');
+        updateServer(row, field, value);
+
+        // 남은 좌석 계산
+        const type = field.startsWith('departure') ? 'departure' : 'arrival';
+        calculateRemainingSeats(row, type);
+      });
+
+      // 엔터 키 입력 처리
+      input.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          input.blur(); // 엔터 누르면 입력 종료
+        }
+      });
     });
   });
 
@@ -266,21 +198,12 @@
       });
   }
 
-
-
-
-
   function updateServer(row, field, value) {
     const date = row.querySelector('td:first-child')?.innerText.trim();
     if (!date) {
       console.error('Date not found in row');
       return;
     }
-
-    // value가 NaN인지 검증하고 기본값 설정
-    const validValue = isNaN(value) ? 0 : value;
-
-    console.log(`Updating server with field: ${field}, value: ${validValue}`);
 
     fetch('/status/monthly/update-block', {
       method: 'POST',
@@ -289,7 +212,7 @@
         updates: [
           {
             date,
-            [field]: validValue,
+            [field]: value,
           },
         ],
       }),

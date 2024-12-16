@@ -110,6 +110,7 @@ router.post('/monthly/update-block', async (req, res) => {
         firstBlock: !isNaN(Number(arrival.firstBlock)) ? Number(arrival.firstBlock) : 0,
       };
 
+      // 기존 블럭이 있는지 확인 후 업데이트 또는 추가
       const result = await Reservation.updateOne(
         { "dailyBlocks.date": new Date(date) },
         {
@@ -121,9 +122,23 @@ router.post('/monthly/update-block', async (req, res) => {
             "dailyBlocks.$.arrival.bizBlock": sanitizedArrival.bizBlock,
             "dailyBlocks.$.arrival.firstBlock": sanitizedArrival.firstBlock,
           },
-        },
-        { upsert: true }
+        }
       );
+
+      // 블럭이 없는 경우 새로 추가
+      if (result.matchedCount === 0) {
+        const newBlock = {
+          date: new Date(date),
+          departure: sanitizedDeparture,
+          arrival: sanitizedArrival,
+        };
+
+        await Reservation.updateOne(
+          { departureDate: new Date(date) }, // 날짜 기준으로 예약 찾기
+          { $push: { dailyBlocks: newBlock } },
+          { upsert: true } // 예약이 없으면 새로 생성
+        );
+      }
 
       console.log(`Update result for date ${date}:`, result);
     }
@@ -134,6 +149,7 @@ router.post('/monthly/update-block', async (req, res) => {
     res.status(500).json({ success: false, message: 'Error updating data: ' + error.message });
   }
 });
+
 
 
 
