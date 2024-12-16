@@ -262,6 +262,9 @@
       return;
     }
 
+    // value가 숫자인지 확인 (NaN일 경우 기본값 0 설정)
+    const validValue = isNaN(value) ? 0 : value;
+
     fetch('/status/monthly/update-block', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -269,7 +272,7 @@
         updates: [
           {
             date,
-            [field]: value,
+            [field]: validValue,
           },
         ],
       }),
@@ -286,6 +289,7 @@
         console.error('Error updating server:', error);
       });
   }
+
 
 
 </script>

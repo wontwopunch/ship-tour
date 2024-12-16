@@ -98,20 +98,33 @@ router.post('/monthly/update-block', async (req, res) => {
         continue;
       }
 
-      // MongoDB 업데이트 로직
+      // 값 검증 및 기본값 설정
+      const sanitizedDeparture = {
+        ecoBlock: Number(departure?.ecoBlock) || 0,
+        bizBlock: Number(departure?.bizBlock) || 0,
+        firstBlock: Number(departure?.firstBlock) || 0,
+      };
+
+      const sanitizedArrival = {
+        ecoBlock: Number(arrival?.ecoBlock) || 0,
+        bizBlock: Number(arrival?.bizBlock) || 0,
+        firstBlock: Number(arrival?.firstBlock) || 0,
+      };
+
+      // MongoDB 업데이트
       const result = await Reservation.updateOne(
-        { "dailyBlocks.date": new Date(date) }, // 날짜 조건
+        { "dailyBlocks.date": new Date(date) },
         {
           $set: {
-            "dailyBlocks.$.departure.ecoBlock": departure?.ecoBlock || 0,
-            "dailyBlocks.$.departure.bizBlock": departure?.bizBlock || 0,
-            "dailyBlocks.$.departure.firstBlock": departure?.firstBlock || 0,
-            "dailyBlocks.$.arrival.ecoBlock": arrival?.ecoBlock || 0,
-            "dailyBlocks.$.arrival.bizBlock": arrival?.bizBlock || 0,
-            "dailyBlocks.$.arrival.firstBlock": arrival?.firstBlock || 0,
+            "dailyBlocks.$.departure.ecoBlock": sanitizedDeparture.ecoBlock,
+            "dailyBlocks.$.departure.bizBlock": sanitizedDeparture.bizBlock,
+            "dailyBlocks.$.departure.firstBlock": sanitizedDeparture.firstBlock,
+            "dailyBlocks.$.arrival.ecoBlock": sanitizedArrival.ecoBlock,
+            "dailyBlocks.$.arrival.bizBlock": sanitizedArrival.bizBlock,
+            "dailyBlocks.$.arrival.firstBlock": sanitizedArrival.firstBlock,
           },
         },
-        { upsert: true } // 기존 데이터가 없으면 추가
+        { upsert: true }
       );
 
       console.log(`Update result for date ${date}:`, result);
@@ -123,6 +136,7 @@ router.post('/monthly/update-block', async (req, res) => {
     res.status(500).json({ success: false, message: 'Error updating data: ' + error.message });
   }
 });
+
 
 
 
