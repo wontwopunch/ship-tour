@@ -8,20 +8,17 @@ const validDate = (date) => date instanceof Date && !isNaN(date.getTime());
 
 // 월별 현황
 router.get('/monthly', async (req, res) => {
-  const currentMonth = parseInt(req.query.month, 10) || new Date().getMonth() + 1;
-
-  if (isNaN(currentMonth) || currentMonth < 1 || currentMonth > 12) {
-    return res.status(400).send('Invalid month parameter');
-  }
+  const { month } = req.query;
+  const currentMonth = parseInt(month, 10) || new Date().getMonth() + 1;
 
   try {
-    const startDate = new Date(Date.UTC(2024, currentMonth - 1, 1));
-    const endDate = new Date(Date.UTC(2024, currentMonth, 1));
+    const startDate = new Date(`2024-${String(currentMonth).padStart(2, '0')}-01`);
+    const endDate = new Date(`2024-${String(currentMonth).padStart(2, '0')}-31`);
 
     const reservations = await Reservation.find({
       $or: [
-        { departureDate: { $gte: startDate, $lt: endDate } },
-        { arrivalDate: { $gte: startDate, $lt: endDate } },
+        { departureDate: { $gte: startDate, $lte: endDate } },
+        { arrivalDate: { $gte: startDate, $lte: endDate } },
       ],
     }).populate('ship');
 
@@ -91,35 +88,28 @@ router.post('/monthly/update-block', async (req, res) => {
         firstBlock: Number(arrival.firstBlock) || 0,
       };
 
-      console.log(`Updating Reservation ID: ${reservationId}, Date: ${date}`);
-
-      const result = await Reservation.updateOne(
-        { _id: reservationId, "dailyBlocks.date": new Date(date) },
-        {
-          $set: {
-            "dailyBlocks.$.departure": sanitizedDeparture,
-            "dailyBlocks.$.arrival": sanitizedArrival,
-          },
-        },
-        { upsert: true }
-      );
-
-      if (result.matchedCount === 0) {
-        console.log(`No matching dailyBlock found for date: ${date}. Adding new block.`);
-        await Reservation.findByIdAndUpdate(
-          reservationId,
-          {
-            $push: {
-              dailyBlocks: {
-                date: new Date(date),
-                departure: sanitizedDeparture,
-                arrival: sanitizedArrival,
-              },
-            },
-          }
-        );
+      const reservation = await Reservation.findById(reservationId);
+      if (!reservation) {
+        console.warn(`Reservation not found for ID: ${reservationId}`);
+        continue;
       }
 
+      const blockIndex = reservation.dailyBlocks.findIndex(
+        (block) => block.date.toISOString().split('T')[0] === new Date(date).toISOString().split('T')[0]
+      );
+
+      if (blockIndex > -1) {
+        reservation.dailyBlocks[blockIndex].departure = sanitizedDeparture;
+        reservation.dailyBlocks[blockIndex].arrival = sanitizedArrival;
+      } else {
+        reservation.dailyBlocks.push({
+          date: new Date(date),
+          departure: sanitizedDeparture,
+          arrival: sanitizedArrival,
+        });
+      }
+
+      await reservation.save();
       updatedBlocks.push({ reservationId, date, departure: sanitizedDeparture, arrival: sanitizedArrival });
     }
 
