@@ -51,17 +51,6 @@ const reservationSchema = new mongoose.Schema(
     refund: { type: Number, default: 0 },
     totalSettlement: {
       type: Number,
-      default: function () {
-        return (
-          this.departureFee +
-          this.arrivalFee +
-          this.dokdoFee +
-          this.restaurantFee +
-          this.eventFee +
-          this.otherFee -
-          this.refund
-        );
-      },
     },
     profit: {
       type: Number,

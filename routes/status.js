@@ -91,7 +91,7 @@ router.post('/monthly/update-block', async (req, res) => {
 
   try {
     for (const update of updates) {
-      const { date, departure = {}, arrival = {}, totalPrice = 0, deposit = 0 } = update;
+      const { date, departure = {}, arrival = {} } = update;
 
       if (!date) {
         console.warn('Skipping update due to missing date:', update);
@@ -110,11 +110,31 @@ router.post('/monthly/update-block', async (req, res) => {
         firstBlock: !isNaN(Number(arrival.firstBlock)) ? Number(arrival.firstBlock) : 0,
       };
 
-      // balance 계산
-      const calculatedBalance = !isNaN(totalPrice) && !isNaN(deposit)
-        ? Number(totalPrice) - Number(deposit)
-        : 0;
+      // ❗️ Add logic to fetch Reservation and calculate totalSettlement
+      const reservation = await Reservation.findOne({
+        "dailyBlocks.date": new Date(date),
+      });
 
+      let totalSettlement = 0;
+
+      if (reservation) {
+        const { departureFee = 0, arrivalFee = 0, dokdoFee = 0, restaurantFee = 0, eventFee = 0, otherFee = 0, refund = 0 } =
+          reservation;
+
+        totalSettlement =
+          departureFee +
+          arrivalFee +
+          dokdoFee +
+          restaurantFee +
+          eventFee +
+          otherFee -
+          refund;
+
+        // Validate if totalSettlement is NaN and set default
+        totalSettlement = isNaN(totalSettlement) ? 0 : totalSettlement;
+      }
+
+      // MongoDB update logic
       const result = await Reservation.updateOne(
         { "dailyBlocks.date": new Date(date) },
         {
@@ -125,7 +145,7 @@ router.post('/monthly/update-block', async (req, res) => {
             "dailyBlocks.$.arrival.ecoBlock": sanitizedArrival.ecoBlock,
             "dailyBlocks.$.arrival.bizBlock": sanitizedArrival.bizBlock,
             "dailyBlocks.$.arrival.firstBlock": sanitizedArrival.firstBlock,
-            balance: calculatedBalance, // balance 필드 업데이트
+            totalSettlement, // Include totalSettlement in update
           },
         },
         { upsert: true }
