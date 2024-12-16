@@ -98,7 +98,6 @@ router.post('/monthly/update-block', async (req, res) => {
         continue;
       }
 
-      // 안전하게 데이터를 변환 및 검증
       const sanitizedDeparture = {
         ecoBlock: !isNaN(Number(departure.ecoBlock)) ? Number(departure.ecoBlock) : 0,
         bizBlock: !isNaN(Number(departure.bizBlock)) ? Number(departure.bizBlock) : 0,
@@ -135,6 +134,7 @@ router.post('/monthly/update-block', async (req, res) => {
     res.status(500).json({ success: false, message: 'Error updating data: ' + error.message });
   }
 });
+
 
 
 // 엑셀 다운로드

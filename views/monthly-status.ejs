@@ -205,10 +205,10 @@
       const field = event.target.getAttribute('data-field');
       let value = parseInt(event.target.value || 0, 10);
 
-      // 숫자 검증 후 기본값 설정
+      // NaN 방지
       if (isNaN(value) || value < 0) {
         value = 0;
-        event.target.value = value; // UI도 동기화
+        event.target.value = value; // UI에도 동기화
       }
 
       console.log(`Updating server with field: ${field}, value: ${value}`);
@@ -265,6 +265,7 @@
         console.error('Error saving block data:', error);
       });
   }
+
 
 
 
