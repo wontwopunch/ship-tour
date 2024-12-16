@@ -80,6 +80,8 @@ router.get('/monthly', async (req, res) => {
 });
 
 
+const { ObjectId } = require('mongoose').Types; // ObjectId 가져오기
+
 router.post('/monthly/update-block', async (req, res) => {
   const { updates } = req.body;
 
@@ -110,7 +112,6 @@ router.post('/monthly/update-block', async (req, res) => {
         firstBlock: !isNaN(Number(arrival.firstBlock)) ? Number(arrival.firstBlock) : 0,
       };
 
-      // MongoDB 업데이트
       const result = await Reservation.updateOne(
         { _id: ObjectId("675fc7cf3cd9be11fae5bd52"), "dailyBlocks.date": new Date(date) },
         {
@@ -123,11 +124,11 @@ router.post('/monthly/update-block', async (req, res) => {
             "dailyBlocks.$.arrival.firstBlock": sanitizedArrival.firstBlock,
           },
         },
-        { upsert: true } // 없으면 추가
+        { upsert: true }
       );
 
       if (result.modifiedCount === 0 && result.upsertedCount === 0) {
-        // 쿼리 조건에 일치하는 블록이 없을 경우 추가
+        // 일치하는 블록이 없을 경우 새로 추가
         await Reservation.updateOne(
           { _id: ObjectId("675fc7cf3cd9be11fae5bd52") },
           {
