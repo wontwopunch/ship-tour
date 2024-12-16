@@ -2,6 +2,17 @@ const express = require('express');
 const router = express.Router(); // Router를 초기화합니다.
 const Ship = require('../models/Ship'); // Ship 모델을 가져옵니다.
 
+
+router.get('/', async (req, res) => {
+  try {
+    const ships = await Ship.find();
+    res.render('ship-management', { ships });
+  } catch (error) {
+    console.error('Error fetching ships:', error.message);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
 // 선박 관리: 선박 이름만 등록
 router.post('/add', async (req, res) => {
   const { name } = req.body;
