@@ -80,7 +80,6 @@ router.get('/monthly', async (req, res) => {
 });
 
 
-// 블럭 데이터 업데이트
 router.post('/monthly/update-block', async (req, res) => {
   const { updates } = req.body;
 
@@ -99,56 +98,23 @@ router.post('/monthly/update-block', async (req, res) => {
         continue;
       }
 
-      // 예약 데이터를 검색
-      const reservation = await Reservation.findOne({
-        $or: [{ departureDate: date }, { arrivalDate: date }],
-      });
-
-      if (!reservation) {
-        console.warn(`No reservation found for date: ${date}`);
-        continue;
-      }
-
-      if (!reservation.dailyBlocks) {
-        reservation.dailyBlocks = [];
-      }
-
-      // 동일 날짜의 블럭 데이터가 있는지 확인
-      const existingBlock = reservation.dailyBlocks.find(
-        (block) => block.date.toISOString().split('T')[0] === date
+      // MongoDB 업데이트 로직
+      const result = await Reservation.updateOne(
+        { "dailyBlocks.date": new Date(date) }, // 날짜 조건
+        {
+          $set: {
+            "dailyBlocks.$.departure.ecoBlock": departure?.ecoBlock || 0,
+            "dailyBlocks.$.departure.bizBlock": departure?.bizBlock || 0,
+            "dailyBlocks.$.departure.firstBlock": departure?.firstBlock || 0,
+            "dailyBlocks.$.arrival.ecoBlock": arrival?.ecoBlock || 0,
+            "dailyBlocks.$.arrival.bizBlock": arrival?.bizBlock || 0,
+            "dailyBlocks.$.arrival.firstBlock": arrival?.firstBlock || 0,
+          },
+        },
+        { upsert: true } // 기존 데이터가 없으면 추가
       );
 
-      if (existingBlock) {
-        // 기존 블럭 데이터 업데이트
-        if (departure) {
-          existingBlock.departure.ecoBlock = departure.ecoBlock || 0;
-          existingBlock.departure.bizBlock = departure.bizBlock || 0;
-          existingBlock.departure.firstBlock = departure.firstBlock || 0;
-        }
-        if (arrival) {
-          existingBlock.arrival.ecoBlock = arrival.ecoBlock || 0;
-          existingBlock.arrival.bizBlock = arrival.bizBlock || 0;
-          existingBlock.arrival.firstBlock = arrival.firstBlock || 0;
-        }
-      } else {
-        // 새 블럭 데이터 추가
-        reservation.dailyBlocks.push({
-          date: new Date(date),
-          departure: {
-            ecoBlock: departure?.ecoBlock || 0,
-            bizBlock: departure?.bizBlock || 0,
-            firstBlock: departure?.firstBlock || 0,
-          },
-          arrival: {
-            ecoBlock: arrival?.ecoBlock || 0,
-            bizBlock: arrival?.bizBlock || 0,
-            firstBlock: arrival?.firstBlock || 0,
-          },
-        });
-      }
-
-      console.log(`Updated dailyBlocks for date: ${date}`);
-      await reservation.save();
+      console.log(`Update result for date ${date}:`, result);
     }
 
     res.json({ success: true, message: 'Block data updated successfully' });
