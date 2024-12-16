@@ -24,12 +24,15 @@ router.post('/add', async (req, res) => {
   try {
     const ship = new Ship({ name });
     await ship.save();
-    res.json({ success: true, message: 'Ship added successfully' });
+
+    // 성공적으로 저장된 선박 데이터를 반환
+    res.json({ success: true, ship, message: 'Ship added successfully' });
   } catch (error) {
     console.error('Error adding ship:', error.message);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
+
 
 // 선박 목록 조회
 router.get('/list', async (req, res) => {

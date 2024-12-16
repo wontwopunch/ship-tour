@@ -26,6 +26,64 @@
   </table>
 </div>
 
+<script>
+  async function fetchShips() {
+    try {
+      const response = await fetch('/ship/list');
+      const ships = await response.json();
+
+      const shipTable = document.querySelector('#shipTable tbody');
+      shipTable.innerHTML = ''; // 기존 목록 초기화
+
+      ships.forEach((ship) => {
+        const newRow = document.createElement('tr');
+        newRow.innerHTML = `
+          <td>${ship.name}</td>
+        `;
+        shipTable.appendChild(newRow);
+      });
+    } catch (error) {
+      console.error('Error fetching ships:', error);
+    }
+  }
+
+  // 선박 추가 폼 처리
+  document.querySelector('.ship-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const formData = new FormData(event.target);
+    const name = formData.get('name');
+
+    try {
+      const response = await fetch('/ship/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        alert(result.message);
+
+        // 선박 목록 갱신
+        await fetchShips();
+
+        // 폼 초기화
+        event.target.reset();
+      } else {
+        alert('선박 추가 실패: ' + result.message);
+      }
+    } catch (error) {
+      console.error('Error adding ship:', error);
+      alert('서버 오류로 선박 추가에 실패했습니다.');
+    }
+  });
+
+  // 페이지 로드 시 선박 목록 가져오기
+  window.onload = fetchShips;
+</script>
+
+
 <style>
   .container {
     margin: 20px;
