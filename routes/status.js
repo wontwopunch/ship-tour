@@ -8,20 +8,15 @@ const validDate = (date) => date instanceof Date && !isNaN(date.getTime());
 
 // 월별 현황
 router.get('/monthly', async (req, res) => {
-  const { month } = req.query;
-  const currentMonth = parseInt(month, 10) || new Date().getMonth() + 1;
+  const currentMonth = parseInt(req.query.month, 10) || new Date().getMonth() + 1;
+
+  if (isNaN(currentMonth) || currentMonth < 1 || currentMonth > 12) {
+    return res.status(400).send('Invalid month parameter');
+  }
 
   try {
-    if (isNaN(currentMonth) || currentMonth < 1 || currentMonth > 12) {
-      throw new Error('Invalid month parameter');
-    }
-
     const startDate = new Date(Date.UTC(2024, currentMonth - 1, 1));
     const endDate = new Date(Date.UTC(2024, currentMonth, 1));
-
-    if (!validDate(startDate) || !validDate(endDate)) {
-      throw new Error(`Invalid date range: startDate=${startDate}, endDate=${endDate}`);
-    }
 
     const reservations = await Reservation.find({
       $or: [
@@ -30,53 +25,37 @@ router.get('/monthly', async (req, res) => {
       ],
     }).populate('ship');
 
-    const data = [];
-    const dateMap = new Map();
-
-    reservations.forEach((reservation) => {
-      const departureDate = validDate(reservation.departureDate)
-        ? reservation.departureDate.toISOString().split('T')[0]
-        : null;
-      const arrivalDate = validDate(reservation.arrivalDate)
-        ? reservation.arrivalDate.toISOString().split('T')[0]
-        : null;
-
-      if (!departureDate && !arrivalDate) {
-        console.warn(`Skipping invalid reservation with ID: ${reservation._id}`);
-        return;
-      }
-
-      if (departureDate) {
-        if (!dateMap.has(departureDate)) {
-          dateMap.set(departureDate, { date: departureDate, departure: {}, arrival: {} });
+    const dateMap = reservations.reduce((map, reservation) => {
+      const addToMap = (key, type, seats) => {
+        if (!map[key]) {
+          map[key] = { date: key, departure: {}, arrival: {} };
         }
-        const record = dateMap.get(departureDate);
-        record.departure = {
-          economy: (record.departure.economy || 0) + (reservation.economySeats || 0),
-          business: (record.departure.business || 0) + (reservation.businessSeats || 0),
-          first: (record.departure.first || 0) + (reservation.firstSeats || 0),
+        map[key][type] = {
+          economy: (map[key][type]?.economy || 0) + (seats.economySeats || 0),
+          business: (map[key][type]?.business || 0) + (seats.businessSeats || 0),
+          first: (map[key][type]?.first || 0) + (seats.firstSeats || 0),
         };
+      };
+
+      if (reservation.departureDate) {
+        const date = reservation.departureDate.toISOString().split('T')[0];
+        addToMap(date, 'departure', reservation);
       }
 
-      if (arrivalDate) {
-        if (!dateMap.has(arrivalDate)) {
-          dateMap.set(arrivalDate, { date: arrivalDate, departure: {}, arrival: {} });
-        }
-        const record = dateMap.get(arrivalDate);
-        record.arrival = {
-          economy: (record.arrival.economy || 0) + (reservation.economySeats || 0),
-          business: (record.arrival.business || 0) + (reservation.businessSeats || 0),
-          first: (record.arrival.first || 0) + (reservation.firstSeats || 0),
-        };
+      if (reservation.arrivalDate) {
+        const date = reservation.arrivalDate.toISOString().split('T')[0];
+        addToMap(date, 'arrival', reservation);
       }
-    });
 
-    data.push(...Array.from(dateMap.values()).sort((a, b) => new Date(a.date) - new Date(b.date)));
+      return map;
+    }, {});
+
+    const data = Object.values(dateMap).sort((a, b) => new Date(a.date) - new Date(b.date));
 
     res.render('monthly-status', { data, currentMonth });
   } catch (error) {
     console.error('Error fetching monthly status:', error.message);
-    res.status(400).send('Error fetching data: ' + error.message);
+    res.status(500).send('Error fetching data: ' + error.message);
   }
 });
 
@@ -86,66 +65,57 @@ const { ObjectId } = require('mongoose').Types;
 router.post('/monthly/update-block', async (req, res) => {
   const { updates } = req.body;
 
-  console.log('Received updates:', JSON.stringify(updates, null, 2));
-
   if (!Array.isArray(updates)) {
     return res.status(400).json({ success: false, message: 'Invalid input data' });
   }
 
   try {
     for (const update of updates) {
-      const { date, departure = {}, arrival = {} } = update;
+      const { reservationId, date, departure = {}, arrival = {} } = update;
 
-      if (!date) {
-        console.warn('Skipping update due to missing date:', update);
+      // 데이터 검증
+      if (!reservationId || !date) {
+        console.warn('Skipping update due to missing reservationId or date:', update);
         continue;
       }
 
       const sanitizedDeparture = {
-        ecoBlock: !isNaN(Number(departure.ecoBlock)) ? Number(departure.ecoBlock) : 0,
-        bizBlock: !isNaN(Number(departure.bizBlock)) ? Number(departure.bizBlock) : 0,
-        firstBlock: !isNaN(Number(departure.firstBlock)) ? Number(departure.firstBlock) : 0,
+        ecoBlock: Number(departure.ecoBlock) || 0,
+        bizBlock: Number(departure.bizBlock) || 0,
+        firstBlock: Number(departure.firstBlock) || 0,
       };
 
       const sanitizedArrival = {
-        ecoBlock: !isNaN(Number(arrival.ecoBlock)) ? Number(arrival.ecoBlock) : 0,
-        bizBlock: !isNaN(Number(arrival.bizBlock)) ? Number(arrival.bizBlock) : 0,
-        firstBlock: !isNaN(Number(arrival.firstBlock)) ? Number(arrival.firstBlock) : 0,
+        ecoBlock: Number(arrival.ecoBlock) || 0,
+        bizBlock: Number(arrival.bizBlock) || 0,
+        firstBlock: Number(arrival.firstBlock) || 0,
       };
 
-      // 먼저 조건에 맞는 dailyBlocks 항목을 업데이트
-      const updateResult = await Reservation.updateOne(
-        { "dailyBlocks.date": new Date(date) },
-        {
-          $set: {
-            "dailyBlocks.$.departure.ecoBlock": sanitizedDeparture.ecoBlock,
-            "dailyBlocks.$.departure.bizBlock": sanitizedDeparture.bizBlock,
-            "dailyBlocks.$.departure.firstBlock": sanitizedDeparture.firstBlock,
-            "dailyBlocks.$.arrival.ecoBlock": sanitizedArrival.ecoBlock,
-            "dailyBlocks.$.arrival.bizBlock": sanitizedArrival.bizBlock,
-            "dailyBlocks.$.arrival.firstBlock": sanitizedArrival.firstBlock,
-          },
-        }
+      // MongoDB 조회 및 조건 처리
+      const reservation = await Reservation.findById(reservationId);
+      if (!reservation) {
+        console.warn(`Reservation not found with ID: ${reservationId}`);
+        continue;
+      }
+
+      const blockIndex = reservation.dailyBlocks.findIndex(
+        (block) => block.date.toISOString().split('T')[0] === new Date(date).toISOString().split('T')[0]
       );
 
-      console.log(`Update result for date ${date}:`, updateResult);
-
-      // 조건에 맞는 항목이 없을 경우 새 dailyBlocks 추가
-      if (updateResult.modifiedCount === 0) {
-        console.log(`No matching dailyBlocks for date ${date}. Adding new block.`);
-        await Reservation.updateOne(
-          { _id: new ObjectId("675fc7cf3cd9be11fae5bd52") }, // 필요한 경우 ObjectId 교체
-          {
-            $push: {
-              dailyBlocks: {
-                date: new Date(date),
-                departure: sanitizedDeparture,
-                arrival: sanitizedArrival,
-              },
-            },
-          }
-        );
+      if (blockIndex > -1) {
+        // 기존 블록 업데이트
+        reservation.dailyBlocks[blockIndex].departure = sanitizedDeparture;
+        reservation.dailyBlocks[blockIndex].arrival = sanitizedArrival;
+      } else {
+        // 새로운 블록 추가
+        reservation.dailyBlocks.push({
+          date: new Date(date),
+          departure: sanitizedDeparture,
+          arrival: sanitizedArrival,
+        });
       }
+
+      await reservation.save();
     }
 
     res.json({ success: true, message: 'Block data updated successfully' });
@@ -154,7 +124,6 @@ router.post('/monthly/update-block', async (req, res) => {
     res.status(500).json({ success: false, message: 'Error updating data: ' + error.message });
   }
 });
-
 
 
 // 엑셀 다운로드
@@ -181,9 +150,6 @@ router.get('/monthly/export', async (req, res) => {
       { header: '예약 이코', key: 'economySeats', width: 10 },
       { header: '예약 비즈', key: 'businessSeats', width: 10 },
       { header: '예약 퍼스', key: 'firstSeats', width: 10 },
-      { header: '블럭 이코', key: 'ecoBlock', width: 10 },
-      { header: '블럭 비즈', key: 'bizBlock', width: 10 },
-      { header: '블럭 퍼스', key: 'firstBlock', width: 10 },
       { header: '잔여 이코', key: 'remainingEconomySeats', width: 10 },
       { header: '잔여 비즈', key: 'remainingBusinessSeats', width: 10 },
       { header: '잔여 퍼스', key: 'remainingFirstSeats', width: 10 },
@@ -197,12 +163,9 @@ router.get('/monthly/export', async (req, res) => {
           economySeats: reservation.economySeats || 0,
           businessSeats: reservation.businessSeats || 0,
           firstSeats: reservation.firstSeats || 0,
-          ecoBlock: reservation.ship?.eco || 0,
-          bizBlock: reservation.ship?.biz || 0,
-          firstBlock: reservation.ship?.first || 0,
-          remainingEconomySeats: (reservation.ship?.eco || 0) - (reservation.economySeats || 0),
-          remainingBusinessSeats: (reservation.ship?.biz || 0) - (reservation.businessSeats || 0),
-          remainingFirstSeats: (reservation.ship?.first || 0) - (reservation.firstSeats || 0),
+          remainingEconomySeats: reservation.totalSeats - reservation.economySeats,
+          remainingBusinessSeats: reservation.totalSeats - reservation.businessSeats,
+          remainingFirstSeats: reservation.totalSeats - reservation.firstSeats,
         });
       }
     });
@@ -216,5 +179,6 @@ router.get('/monthly/export', async (req, res) => {
     res.status(500).send('Error exporting data: ' + error.message);
   }
 });
+
 
 module.exports = router;
