@@ -81,6 +81,7 @@ router.get('/monthly', async (req, res) => {
 
 
 // 블럭 데이터 업데이트
+// 블럭 데이터 업데이트
 router.post('/monthly/update-block', async (req, res) => {
   const { updates } = req.body;
 
@@ -105,7 +106,7 @@ router.post('/monthly/update-block', async (req, res) => {
       });
 
       if (!reservation) {
-        // 예약 데이터가 없으면 새로 생성
+        console.log(`No reservation found for date: ${date}, creating a new one.`);
         reservation = new Reservation({
           departureDate: date,
           arrivalDate: date,
@@ -118,12 +119,13 @@ router.post('/monthly/update-block', async (req, res) => {
       }
 
       // 기존 블럭 데이터 확인
-      let existingBlock = reservation.dailyBlocks.find(
+      const existingBlockIndex = reservation.dailyBlocks.findIndex(
         (block) => block.date.toISOString().split('T')[0] === date
       );
 
-      if (existingBlock) {
+      if (existingBlockIndex !== -1) {
         // 기존 블럭 데이터 업데이트
+        const existingBlock = reservation.dailyBlocks[existingBlockIndex];
         if (departure) {
           existingBlock.departure.ecoBlock = departure.ecoBlock || 0;
           existingBlock.departure.bizBlock = departure.bizBlock || 0;
@@ -134,6 +136,7 @@ router.post('/monthly/update-block', async (req, res) => {
           existingBlock.arrival.bizBlock = arrival.bizBlock || 0;
           existingBlock.arrival.firstBlock = arrival.firstBlock || 0;
         }
+        reservation.dailyBlocks[existingBlockIndex] = existingBlock;
       } else {
         // 새로운 블럭 데이터 추가
         reservation.dailyBlocks.push({
@@ -151,7 +154,7 @@ router.post('/monthly/update-block', async (req, res) => {
         });
       }
 
-      // 예약 데이터 저장
+      console.log(`Saving reservation for date: ${date}`);
       await reservation.save();
     }
 
@@ -161,8 +164,6 @@ router.post('/monthly/update-block', async (req, res) => {
     res.status(500).json({ success: false, message: 'Error updating data: ' + error.message });
   }
 });
-
-
 
 
 // 엑셀 다운로드
