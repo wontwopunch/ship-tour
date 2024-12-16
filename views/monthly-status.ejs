@@ -179,7 +179,7 @@
       .then((data) => {
         if (data.success) {
           alert('블럭 데이터가 저장되었습니다.');
-          updateTable(data.updatedBlocks); // 테이블 갱신
+          location.reload(); // 테이블 갱신을 위해 새로고침
         } else {
           alert('블럭 데이터 저장 중 오류가 발생했습니다.');
         }

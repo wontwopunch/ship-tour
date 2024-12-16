@@ -59,7 +59,6 @@ router.get('/monthly', async (req, res) => {
   }
 });
 
-
 const { ObjectId } = require('mongoose').Types;
 
 router.post('/monthly/update-block', async (req, res) => {
@@ -120,10 +119,9 @@ router.post('/monthly/update-block', async (req, res) => {
     res.json({ success: true, message: 'Block data updated successfully', updatedBlocks });
   } catch (error) {
     console.error('Error updating block data:', error.message);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Error updating data: ' + error.message });
   }
 });
-
 
 
 // 엑셀 다운로드
