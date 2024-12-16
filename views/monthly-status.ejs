@@ -101,12 +101,18 @@
     const remainingBiz = row.querySelector(`[data-field="${type}.remainingBiz"]`);
     const remainingFirst = row.querySelector(`[data-field="${type}.remainingFirst"]`);
 
-    if (!economyReserved || !businessReserved || !firstReserved) {
+    // 디버깅 로그 추가
+    console.log(`${type} Calculation Debugging:`);
+    console.log('Economy Input:', economyInput);
+    console.log('Business Input:', businessInput);
+    console.log('First Input:', firstInput);
+    console.log('Economy Reserved:', economyReserved);
+    console.log('Business Reserved:', businessReserved);
+    console.log('First Reserved:', firstReserved);
+
+    if (!economyInput || !businessInput || !firstInput || !economyReserved || !businessReserved || !firstReserved) {
       console.error(`Missing reserved fields for type: ${type}`);
-      console.error(`Economy Reserved: ${economyReserved}`);
-      console.error(`Business Reserved: ${businessReserved}`);
-      console.error(`First Reserved: ${firstReserved}`);
-      return; // 해당 엘리먼트가 없으면 계산 중단
+      return; // 필수 필드가 없으면 계산 중단
     }
 
     // 계산 로직
@@ -114,10 +120,12 @@
     remainingBiz.innerText = parseInt(businessInput.value || 0, 10) - parseInt(businessReserved.innerText || 0, 10);
     remainingFirst.innerText = parseInt(firstInput.value || 0, 10) - parseInt(firstReserved.innerText || 0, 10);
 
-    remainingEco.style.color = remainingEco.innerText < 0 ? 'red' : 'inherit';
-    remainingBiz.style.color = remainingBiz.innerText < 0 ? 'red' : 'inherit';
-    remainingFirst.style.color = remainingFirst.innerText < 0 ? 'red' : 'inherit';
+    // 색상 적용
+    remainingEco.style.color = parseInt(remainingEco.innerText, 10) < 0 ? 'red' : 'inherit';
+    remainingBiz.style.color = parseInt(remainingBiz.innerText, 10) < 0 ? 'red' : 'inherit';
+    remainingFirst.style.color = parseInt(remainingFirst.innerText, 10) < 0 ? 'red' : 'inherit';
   }
+
 
 
   document.querySelectorAll('input[type="number"]').forEach(input => {
