@@ -99,7 +99,7 @@ router.post('/monthly/update-block', async (req, res) => {
         continue;
       }
 
-      // 날짜별 예약 데이터 검색
+      // 예약 데이터를 검색
       const reservation = await Reservation.findOne({
         $or: [{ departureDate: date }, { arrivalDate: date }],
       });
@@ -113,14 +113,13 @@ router.post('/monthly/update-block', async (req, res) => {
         reservation.dailyBlocks = [];
       }
 
-      // 기존 블럭 데이터 확인 및 업데이트
-      const existingBlockIndex = reservation.dailyBlocks.findIndex(
+      // 동일 날짜의 블럭 데이터가 있는지 확인
+      const existingBlock = reservation.dailyBlocks.find(
         (block) => block.date.toISOString().split('T')[0] === date
       );
 
-      if (existingBlockIndex !== -1) {
+      if (existingBlock) {
         // 기존 블럭 데이터 업데이트
-        const existingBlock = reservation.dailyBlocks[existingBlockIndex];
         if (departure) {
           existingBlock.departure.ecoBlock = departure.ecoBlock || 0;
           existingBlock.departure.bizBlock = departure.bizBlock || 0;
@@ -131,9 +130,8 @@ router.post('/monthly/update-block', async (req, res) => {
           existingBlock.arrival.bizBlock = arrival.bizBlock || 0;
           existingBlock.arrival.firstBlock = arrival.firstBlock || 0;
         }
-        reservation.dailyBlocks[existingBlockIndex] = existingBlock;
       } else {
-        // 새로운 블럭 데이터 추가
+        // 새 블럭 데이터 추가
         reservation.dailyBlocks.push({
           date: new Date(date),
           departure: {
@@ -149,7 +147,7 @@ router.post('/monthly/update-block', async (req, res) => {
         });
       }
 
-      console.log(`Saving reservation for date: ${date}`);
+      console.log(`Updated dailyBlocks for date: ${date}`);
       await reservation.save();
     }
 
@@ -159,6 +157,7 @@ router.post('/monthly/update-block', async (req, res) => {
     res.status(500).json({ success: false, message: 'Error updating data: ' + error.message });
   }
 });
+
 
 
 // 엑셀 다운로드

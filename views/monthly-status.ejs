@@ -159,7 +159,6 @@
     const updates = Array.from(rows).map((row) => {
       const date = row.querySelector('td:first-child')?.innerText.trim();
       if (!date) return null;
-
       return {
         date,
         departure: {
@@ -195,6 +194,7 @@
         console.error('Error saving block data:', error);
       });
   }
+
 
 
 
