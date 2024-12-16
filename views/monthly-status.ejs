@@ -148,43 +148,37 @@
     });
   });
 
-
-
   function saveBlockData() {
     const rows = document.querySelectorAll('tbody tr');
     const updates = Array.from(rows).map((row) => {
       const date = row.querySelector('td:first-child')?.innerText.trim();
-      if (!date) return null;
-
-      const sanitizeValue = (selector) => {
-        const input = row.querySelector(selector);
-        const value = parseInt(input?.value || 0, 10);
-        return isNaN(value) || value < 0 ? 0 : value;
-      };
-
+      if (!date) return null; // 날짜가 없으면 건너뜀
       return {
         date,
         departure: {
-          ecoBlock: sanitizeValue('[data-field="departure.ecoBlock"]'),
-          bizBlock: sanitizeValue('[data-field="departure.bizBlock"]'),
-          firstBlock: sanitizeValue('[data-field="departure.firstBlock"]'),
+          ecoBlock: parseInt(row.querySelector('[data-field="departure.ecoBlock"]')?.textContent || 0, 10),
+          bizBlock: parseInt(row.querySelector('[data-field="departure.bizBlock"]')?.textContent || 0, 10),
+          firstBlock: parseInt(row.querySelector('[data-field="departure.firstBlock"]')?.textContent || 0, 10),
         },
         arrival: {
-          ecoBlock: sanitizeValue('[data-field="arrival.ecoBlock"]'),
-          bizBlock: sanitizeValue('[data-field="arrival.bizBlock"]'),
-          firstBlock: sanitizeValue('[data-field="arrival.firstBlock"]'),
+          ecoBlock: parseInt(row.querySelector('[data-field="arrival.ecoBlock"]')?.textContent || 0, 10),
+          bizBlock: parseInt(row.querySelector('[data-field="arrival.bizBlock"]')?.textContent || 0, 10),
+          firstBlock: parseInt(row.querySelector('[data-field="arrival.firstBlock"]')?.textContent || 0, 10),
         },
       };
-    }).filter(Boolean);
+    }).filter(Boolean); // 유효한 업데이트만 필터링
 
-    console.log('Payload for update:', updates);
+    console.log('Payload for update:', updates); // 요청 데이터 디버깅
 
     fetch('/status/monthly/update-block', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ updates }),
     })
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) throw new Error('Failed to update block data');
+        return response.json();
+      })
       .then((data) => {
         if (data.success) {
           alert('블럭 데이터가 저장되었습니다.');
