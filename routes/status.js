@@ -110,44 +110,9 @@ router.post('/monthly/update-block', async (req, res) => {
         firstBlock: !isNaN(Number(arrival.firstBlock)) ? Number(arrival.firstBlock) : 0,
       };
 
-      const reservation = await Reservation.findOne({
-        "dailyBlocks.date": new Date(date),
-      });
-
-      let totalSettlement = 0;
-      let profit = 0;
-
-      if (reservation) {
-        const {
-          departureFee = 0,
-          arrivalFee = 0,
-          dokdoFee = 0,
-          restaurantFee = 0,
-          eventFee = 0,
-          otherFee = 0,
-          refund = 0,
-          totalPrice = 0,
-        } = reservation;
-
-        // 총 정산값 계산
-        totalSettlement =
-          (departureFee || 0) +
-          (arrivalFee || 0) +
-          (dokdoFee || 0) +
-          (restaurantFee || 0) +
-          (eventFee || 0) +
-          (otherFee || 0) -
-          (refund || 0);
-
-        totalSettlement = isNaN(totalSettlement) ? 0 : totalSettlement;
-
-        // profit 계산
-        profit = totalPrice - totalSettlement;
-        profit = isNaN(profit) ? 0 : profit;
-      }
-
+      // MongoDB 업데이트
       const result = await Reservation.updateOne(
-        { "dailyBlocks.date": new Date(date) },
+        { _id: ObjectId("675fc7cf3cd9be11fae5bd52"), "dailyBlocks.date": new Date(date) },
         {
           $set: {
             "dailyBlocks.$.departure.ecoBlock": sanitizedDeparture.ecoBlock,
@@ -156,12 +121,26 @@ router.post('/monthly/update-block', async (req, res) => {
             "dailyBlocks.$.arrival.ecoBlock": sanitizedArrival.ecoBlock,
             "dailyBlocks.$.arrival.bizBlock": sanitizedArrival.bizBlock,
             "dailyBlocks.$.arrival.firstBlock": sanitizedArrival.firstBlock,
-            totalSettlement, // 총 정산값 저장
-            profit, // 이익값 저장
           },
         },
-        { upsert: true }
+        { upsert: true } // 없으면 추가
       );
+
+      if (result.modifiedCount === 0 && result.upsertedCount === 0) {
+        // 쿼리 조건에 일치하는 블록이 없을 경우 추가
+        await Reservation.updateOne(
+          { _id: ObjectId("675fc7cf3cd9be11fae5bd52") },
+          {
+            $push: {
+              dailyBlocks: {
+                date: new Date(date),
+                departure: sanitizedDeparture,
+                arrival: sanitizedArrival,
+              },
+            },
+          }
+        );
+      }
 
       console.log(`Update result for date ${date}:`, result);
     }
