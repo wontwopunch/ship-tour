@@ -184,7 +184,6 @@
   }
 
 
-
   document.querySelectorAll('input[type="number"]').forEach(input => {
     input.addEventListener('input', (event) => {
       const row = event.target.closest('tr');
@@ -204,11 +203,19 @@
         return;
       }
       const field = event.target.getAttribute('data-field');
-      const value = parseInt(event.target.value || 0, 10);
+      let value = parseInt(event.target.value || 0, 10);
+
+      // 숫자 검증 후 기본값 설정
+      if (isNaN(value) || value < 0) {
+        value = 0;
+        event.target.value = value; // UI도 동기화
+      }
+
       console.log(`Updating server with field: ${field}, value: ${value}`);
       updateServer(row, field, value);
     });
   });
+
 
 
   function saveBlockData() {
@@ -216,17 +223,24 @@
     const updates = Array.from(rows).map((row) => {
       const date = row.querySelector('td:first-child')?.innerText.trim();
       if (!date) return null;
+
+      const sanitizeValue = (selector) => {
+        const input = row.querySelector(selector);
+        const value = parseInt(input?.value || 0, 10);
+        return isNaN(value) || value < 0 ? 0 : value;
+      };
+
       return {
         date,
         departure: {
-          ecoBlock: parseInt(row.querySelector('[data-field="departure.ecoBlock"]')?.value || 0, 10),
-          bizBlock: parseInt(row.querySelector('[data-field="departure.bizBlock"]')?.value || 0, 10),
-          firstBlock: parseInt(row.querySelector('[data-field="departure.firstBlock"]')?.value || 0, 10),
+          ecoBlock: sanitizeValue('[data-field="departure.ecoBlock"]'),
+          bizBlock: sanitizeValue('[data-field="departure.bizBlock"]'),
+          firstBlock: sanitizeValue('[data-field="departure.firstBlock"]'),
         },
         arrival: {
-          ecoBlock: parseInt(row.querySelector('[data-field="arrival.ecoBlock"]')?.value || 0, 10),
-          bizBlock: parseInt(row.querySelector('[data-field="arrival.bizBlock"]')?.value || 0, 10),
-          firstBlock: parseInt(row.querySelector('[data-field="arrival.firstBlock"]')?.value || 0, 10),
+          ecoBlock: sanitizeValue('[data-field="arrival.ecoBlock"]'),
+          bizBlock: sanitizeValue('[data-field="arrival.bizBlock"]'),
+          firstBlock: sanitizeValue('[data-field="arrival.firstBlock"]'),
         },
       };
     }).filter(Boolean);
@@ -251,8 +265,6 @@
         console.error('Error saving block data:', error);
       });
   }
-
-
 
 
   function updateServer(row, field, value) {
@@ -291,20 +303,9 @@
         console.error('Error updating server:', error);
       });
   }
-
-
-
-
 </script>
 
 <style>
-  /* 컨테이너 스타일 */
-  .container {
-    margin: 20px auto;
-    max-width: 1200px;
-    font-family: Arial, sans-serif;
-  }
-
   /* 제목 스타일 */
   h1 {
     text-align: center;

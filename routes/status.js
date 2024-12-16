@@ -100,18 +100,17 @@ router.post('/monthly/update-block', async (req, res) => {
 
       // 값 검증 및 기본값 설정
       const sanitizedDeparture = {
-        ecoBlock: Number(departure?.ecoBlock) || 0,
-        bizBlock: Number(departure?.bizBlock) || 0,
-        firstBlock: Number(departure?.firstBlock) || 0,
+        ecoBlock: Number(departure?.ecoBlock) >= 0 ? Number(departure?.ecoBlock) : 0,
+        bizBlock: Number(departure?.bizBlock) >= 0 ? Number(departure?.bizBlock) : 0,
+        firstBlock: Number(departure?.firstBlock) >= 0 ? Number(departure?.firstBlock) : 0,
       };
 
       const sanitizedArrival = {
-        ecoBlock: Number(arrival?.ecoBlock) || 0,
-        bizBlock: Number(arrival?.bizBlock) || 0,
-        firstBlock: Number(arrival?.firstBlock) || 0,
+        ecoBlock: Number(arrival?.ecoBlock) >= 0 ? Number(arrival?.ecoBlock) : 0,
+        bizBlock: Number(arrival?.bizBlock) >= 0 ? Number(arrival?.bizBlock) : 0,
+        firstBlock: Number(arrival?.firstBlock) >= 0 ? Number(arrival?.firstBlock) : 0,
       };
 
-      // MongoDB 업데이트
       const result = await Reservation.updateOne(
         { "dailyBlocks.date": new Date(date) },
         {
