@@ -91,7 +91,7 @@ router.post('/monthly/update-block', async (req, res) => {
 
   try {
     for (const update of updates) {
-      const { date, departure = {}, arrival = {}, totalPrice, deposit } = update;
+      const { date, departure = {}, arrival = {}, totalPrice = 0, deposit = 0 } = update;
 
       if (!date) {
         console.warn('Skipping update due to missing date:', update);
@@ -111,7 +111,7 @@ router.post('/monthly/update-block', async (req, res) => {
       };
 
       // balance 계산
-      const calculatedBalance = !isNaN(Number(totalPrice)) && !isNaN(Number(deposit))
+      const calculatedBalance = !isNaN(totalPrice) && !isNaN(deposit)
         ? Number(totalPrice) - Number(deposit)
         : 0;
 
@@ -125,7 +125,7 @@ router.post('/monthly/update-block', async (req, res) => {
             "dailyBlocks.$.arrival.ecoBlock": sanitizedArrival.ecoBlock,
             "dailyBlocks.$.arrival.bizBlock": sanitizedArrival.bizBlock,
             "dailyBlocks.$.arrival.firstBlock": sanitizedArrival.firstBlock,
-            balance: calculatedBalance, // balance 값 명시적으로 설정
+            balance: calculatedBalance, // balance 필드 업데이트
           },
         },
         { upsert: true }
@@ -140,7 +140,6 @@ router.post('/monthly/update-block', async (req, res) => {
     res.status(500).json({ success: false, message: 'Error updating data: ' + error.message });
   }
 });
-
 
 
 // 엑셀 다운로드

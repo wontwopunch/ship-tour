@@ -154,18 +154,17 @@
       const date = row.querySelector('td:first-child')?.innerText.trim();
       if (!date) return null;
 
-      // 각 필드 데이터를 숫자로 변환
-      const departureEcoBlock = parseInt(row.querySelector('[data-field="departure.ecoBlock"]')?.textContent || 0, 10);
-      const departureBizBlock = parseInt(row.querySelector('[data-field="departure.bizBlock"]')?.textContent || 0, 10);
-      const departureFirstBlock = parseInt(row.querySelector('[data-field="departure.firstBlock"]')?.textContent || 0, 10);
+      const departureEcoBlock = parseInt(row.querySelector('[data-field="departure.ecoBlock"]')?.innerText || 0, 10);
+      const departureBizBlock = parseInt(row.querySelector('[data-field="departure.bizBlock"]')?.innerText || 0, 10);
+      const departureFirstBlock = parseInt(row.querySelector('[data-field="departure.firstBlock"]')?.innerText || 0, 10);
 
-      const arrivalEcoBlock = parseInt(row.querySelector('[data-field="arrival.ecoBlock"]')?.textContent || 0, 10);
-      const arrivalBizBlock = parseInt(row.querySelector('[data-field="arrival.bizBlock"]')?.textContent || 0, 10);
-      const arrivalFirstBlock = parseInt(row.querySelector('[data-field="arrival.firstBlock"]')?.textContent || 0, 10);
+      const arrivalEcoBlock = parseInt(row.querySelector('[data-field="arrival.ecoBlock"]')?.innerText || 0, 10);
+      const arrivalBizBlock = parseInt(row.querySelector('[data-field="arrival.bizBlock"]')?.innerText || 0, 10);
+      const arrivalFirstBlock = parseInt(row.querySelector('[data-field="arrival.firstBlock"]')?.innerText || 0, 10);
 
-      // 금액 관련 데이터 가져오기
-      const totalPrice = parseInt(row.querySelector('[data-field="totalPrice"]')?.textContent || 0, 10);
-      const deposit = parseInt(row.querySelector('[data-field="deposit"]')?.textContent || 0, 10);
+      // totalPrice와 deposit 값을 가져옴
+      const totalPrice = parseInt(row.querySelector('[data-field="totalPrice"]')?.innerText || 0, 10);
+      const deposit = parseInt(row.querySelector('[data-field="deposit"]')?.innerText || 0, 10);
 
       return {
         date,

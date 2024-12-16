@@ -34,9 +34,6 @@ const reservationSchema = new mongoose.Schema(
     deposit: { type: Number, required: true, default: 0 },
     balance: {
       type: Number,
-      default: function () {
-        return this.totalPrice - this.deposit;
-      },
     },
 
     // 예약관리
