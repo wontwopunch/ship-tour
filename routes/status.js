@@ -69,7 +69,7 @@ router.post('/monthly/update-block', async (req, res) => {
     const updatedBlocks = [];
 
     for (const update of updates) {
-      const { reservationId, date, departure = {}, arrival = {} } = update;
+      const { reservationId, date, departure = {}, arrival = {}, ship = null } = update;
 
       if (!date) {
         console.warn('Skipping update due to missing date:', update);
@@ -116,6 +116,7 @@ router.post('/monthly/update-block', async (req, res) => {
       } else {
         // 새 예약 생성
         const newReservation = new Reservation({
+          ship, // 기본값이 없으면 null로 설정
           dailyBlocks: [
             {
               date: new Date(date),

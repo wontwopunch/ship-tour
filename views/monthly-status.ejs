@@ -152,15 +152,17 @@
     const updates = Array.from(rows).map((row) => {
       const reservationId = row.getAttribute('data-reservation-id') || null;
       const date = row.querySelector('td:first-child')?.innerText.trim();
+      const ship = row.querySelector('select[data-field="ship"]')?.value || null;
 
-      if (!date) {
-        console.warn('Skipping row due to missing date:', { date, reservationId });
+      if (!date || (!reservationId && !ship)) {
+        console.warn('Skipping row due to missing required fields:', { reservationId, date, ship });
         return null;
       }
 
       return {
         reservationId, // reservationId가 없으면 null
         date,
+        ship, // ship 필드 추가
         departure: {
           ecoBlock: parseInt(row.querySelector('[data-field="departure.ecoBlock"]')?.innerText || 0, 10),
           bizBlock: parseInt(row.querySelector('[data-field="departure.bizBlock"]')?.innerText || 0, 10),
@@ -175,7 +177,7 @@
     }).filter(Boolean);
 
     if (updates.length === 0) {
-      alert('유효한 데이터가 없습니다. 날짜를 확인하세요.');
+      alert('유효한 데이터가 없습니다. 날짜 및 선박을 확인하세요.');
       return;
     }
 
@@ -196,9 +198,6 @@
         console.error('Error saving block data:', error);
       });
   }
-
-
-
 
   function updateServer(row, field, value) {
     const date = row.querySelector('td:first-child')?.innerText.trim();
