@@ -91,28 +91,35 @@ router.post('/monthly/update-block', async (req, res) => {
         firstBlock: Number(arrival.firstBlock) || 0,
       };
 
-      const reservation = await Reservation.findById(reservationId);
-      if (!reservation) {
-        console.warn(`Reservation not found for ID: ${reservationId}`);
-        continue;
-      }
+      console.log(`Updating Reservation ID: ${reservationId}, Date: ${date}`);
 
-      const blockIndex = reservation.dailyBlocks.findIndex(
-        (block) => block.date.toISOString().split('T')[0] === new Date(date).toISOString().split('T')[0]
+      const result = await Reservation.updateOne(
+        { _id: reservationId, "dailyBlocks.date": new Date(date) },
+        {
+          $set: {
+            "dailyBlocks.$.departure": sanitizedDeparture,
+            "dailyBlocks.$.arrival": sanitizedArrival,
+          },
+        },
+        { upsert: true }
       );
 
-      if (blockIndex > -1) {
-        reservation.dailyBlocks[blockIndex].departure = sanitizedDeparture;
-        reservation.dailyBlocks[blockIndex].arrival = sanitizedArrival;
-      } else {
-        reservation.dailyBlocks.push({
-          date: new Date(date),
-          departure: sanitizedDeparture,
-          arrival: sanitizedArrival,
-        });
+      if (result.matchedCount === 0) {
+        console.log(`No matching dailyBlock found for date: ${date}. Adding new block.`);
+        await Reservation.findByIdAndUpdate(
+          reservationId,
+          {
+            $push: {
+              dailyBlocks: {
+                date: new Date(date),
+                departure: sanitizedDeparture,
+                arrival: sanitizedArrival,
+              },
+            },
+          }
+        );
       }
 
-      await reservation.save();
       updatedBlocks.push({ reservationId, date, departure: sanitizedDeparture, arrival: sanitizedArrival });
     }
 

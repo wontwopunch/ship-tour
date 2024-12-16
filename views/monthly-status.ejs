@@ -170,6 +170,8 @@
       };
     }).filter(Boolean);
 
+    console.log('Payload for update:', JSON.stringify({ updates }, null, 2)); // 디버깅용 로그
+
     fetch('/status/monthly/update-block', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -177,9 +179,10 @@
     })
       .then((response) => response.json())
       .then((data) => {
+        console.log('Server Response:', data); // 디버깅용 로그
         if (data.success) {
           alert('블럭 데이터가 저장되었습니다.');
-          location.reload(); // 테이블 갱신을 위해 새로고침
+          location.reload();
         } else {
           alert('블럭 데이터 저장 중 오류가 발생했습니다.');
         }
@@ -188,27 +191,6 @@
         console.error('Error saving block data:', error);
       });
   }
-
-  function updateTable(updatedBlocks) {
-    updatedBlocks.forEach((block) => {
-      const row = document.querySelector(`tr[data-reservation-id="${block.reservationId}"]`);
-      if (!row) return;
-
-      row.querySelector('[data-field="departure.ecoBlock"]').innerText = block.departure.ecoBlock;
-      row.querySelector('[data-field="departure.bizBlock"]').innerText = block.departure.bizBlock;
-      row.querySelector('[data-field="departure.firstBlock"]').innerText = block.departure.firstBlock;
-
-      row.querySelector('[data-field="arrival.ecoBlock"]').innerText = block.arrival.ecoBlock;
-      row.querySelector('[data-field="arrival.bizBlock"]').innerText = block.arrival.bizBlock;
-      row.querySelector('[data-field="arrival.firstBlock"]').innerText = block.arrival.firstBlock;
-
-      calculateRemainingSeats(row, 'departure');
-      calculateRemainingSeats(row, 'arrival');
-    });
-  }
-
-
-
 
   function updateServer(row, field, value) {
     const date = row.querySelector('td:first-child')?.innerText.trim();
