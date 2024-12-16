@@ -17,8 +17,12 @@ const statusRouter = require('./routes/status');
 const app = express();
 
 // 데이터베이스 연결
-connectDB();
-
+connectDB()
+  .then(() => console.log('MongoDB connected successfully'))
+  .catch((err) => {
+    console.error('MongoDB connection error:', err.message);
+    process.exit(1); // 데이터베이스 연결 실패 시 프로세스를 종료합니다.
+  });
 
 
 // 뷰 엔진 설정
