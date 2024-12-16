@@ -87,7 +87,7 @@ router.post('/monthly/update-block', async (req, res) => {
   console.log('Received updates:', JSON.stringify(updates, null, 2));
 
   if (!Array.isArray(updates)) {
-    return res.status(400).json({ success: false, message: 'Invalid input data' });
+    return res.status(400).json({ success: false, message: 'Invalid input data format' });
   }
 
   try {
@@ -99,13 +99,14 @@ router.post('/monthly/update-block', async (req, res) => {
         continue;
       }
 
-      // 날짜별로 예약 데이터를 검색
+      // 날짜별로 예약 데이터 검색
       let reservation = await Reservation.findOne({
         $or: [{ departureDate: date }, { arrivalDate: date }],
       });
 
       if (!reservation) {
         // 예약 데이터가 없으면 새로 생성
+        console.log(`No reservation found for date ${date}, creating a new one.`);
         reservation = new Reservation({
           departureDate: date,
           arrivalDate: date,
@@ -113,16 +114,20 @@ router.post('/monthly/update-block', async (req, res) => {
         });
       }
 
+      // `dailyBlocks`가 없으면 초기화
       if (!reservation.dailyBlocks) {
         reservation.dailyBlocks = [];
       }
 
+      const blockDate = new Date(date).toISOString().split('T')[0];
+
       // 기존 블럭 데이터 업데이트 또는 새로 추가
       const existingBlock = reservation.dailyBlocks.find(
-        (block) => block.date.toISOString().split('T')[0] === date
+        (block) => block.date.toISOString().split('T')[0] === blockDate
       );
 
       if (existingBlock) {
+        console.log(`Updating existing block for date ${blockDate}`);
         if (departure) {
           existingBlock.departure.ecoBlock = departure.ecoBlock || 0;
           existingBlock.departure.bizBlock = departure.bizBlock || 0;
@@ -134,8 +139,9 @@ router.post('/monthly/update-block', async (req, res) => {
           existingBlock.arrival.firstBlock = arrival.firstBlock || 0;
         }
       } else {
+        console.log(`Adding new block for date ${blockDate}`);
         reservation.dailyBlocks.push({
-          date,
+          date: new Date(blockDate),
           departure: {
             ecoBlock: departure?.ecoBlock || 0,
             bizBlock: departure?.bizBlock || 0,
@@ -149,13 +155,15 @@ router.post('/monthly/update-block', async (req, res) => {
         });
       }
 
+      // 저장
       await reservation.save();
+      console.log(`Saved reservation for date ${date}`);
     }
 
     res.json({ success: true, message: 'Block data updated successfully' });
   } catch (error) {
-    console.error('Error updating block data:', error.message);
-    res.status(500).json({ success: false, message: 'Error updating data: ' + error.message });
+    console.error('Error updating block data:', error);
+    res.status(500).json({ success: false, message: 'Error updating block data: ' + error.message });
   }
 });
 
