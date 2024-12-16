@@ -51,18 +51,18 @@
               <%= row.date %> 
               (<%= ['일', '월', '화', '수', '목', '금', '토'][new Date(row.date).getDay()] %>)
             </td>
-            <td><%= row.departure.economy || 0 %></td>
-            <td><%= row.departure.business || 0 %></td>
-            <td><%= row.departure.first || 0 %></td>
+            <td data-field="departure.economy"><%= row.departure.economy || 0 %></td>
+            <td data-field="departure.business"><%= row.departure.business || 0 %></td>
+            <td data-field="departure.first"><%= row.departure.first || 0 %></td>
             <td><input type="number" value="<%= row.departure.ecoBlock || 0 %>" data-field="departure.ecoBlock"></td>
             <td><input type="number" value="<%= row.departure.bizBlock || 0 %>" data-field="departure.bizBlock"></td>
             <td><input type="number" value="<%= row.departure.firstBlock || 0 %>" data-field="departure.firstBlock"></td>
             <td data-field="departure.remainingEco"><%= (row.departure.ecoBlock || 0) - (row.departure.economy || 0) %></td>
             <td data-field="departure.remainingBiz"><%= (row.departure.bizBlock || 0) - (row.departure.business || 0) %></td>
             <td data-field="departure.remainingFirst"><%= (row.departure.firstBlock || 0) - (row.departure.first || 0) %></td>
-            <td><%= row.arrival.economy || 0 %></td>
-            <td><%= row.arrival.business || 0 %></td>
-            <td><%= row.arrival.first || 0 %></td>
+            <td data-field="arrival.economy"><%= row.arrival.economy || 0 %></td>
+            <td data-field="arrival.business"><%= row.arrival.business || 0 %></td>
+            <td data-field="arrival.first"><%= row.arrival.first || 0 %></td>
             <td><input type="number" value="<%= row.arrival.ecoBlock || 0 %>" data-field="arrival.ecoBlock"></td>
             <td><input type="number" value="<%= row.arrival.bizBlock || 0 %>" data-field="arrival.bizBlock"></td>
             <td><input type="number" value="<%= row.arrival.firstBlock || 0 %>" data-field="arrival.firstBlock"></td>
