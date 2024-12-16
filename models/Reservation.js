@@ -55,10 +55,12 @@ const reservationSchema = new mongoose.Schema(
     profit: {
       type: Number,
       default: function () {
-        return this.totalPrice - this.totalSettlement;
+        const totalPrice = !isNaN(this.totalPrice) ? this.totalPrice : 0;
+        const totalSettlement = !isNaN(this.totalSettlement) ? this.totalSettlement : 0;
+        return totalPrice - totalSettlement;
       },
     },
-
+    
     // 날짜별 블럭 좌석 정보
     dailyBlocks: [
       {

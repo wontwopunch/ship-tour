@@ -110,17 +110,27 @@ router.post('/monthly/update-block', async (req, res) => {
         firstBlock: !isNaN(Number(arrival.firstBlock)) ? Number(arrival.firstBlock) : 0,
       };
 
-      // ❗️ Add logic to fetch Reservation and calculate totalSettlement
+      // Reservation 데이터 가져오기
       const reservation = await Reservation.findOne({
         "dailyBlocks.date": new Date(date),
       });
 
       let totalSettlement = 0;
+      let profit = 0;
 
       if (reservation) {
-        const { departureFee = 0, arrivalFee = 0, dokdoFee = 0, restaurantFee = 0, eventFee = 0, otherFee = 0, refund = 0 } =
-          reservation;
+        const {
+          departureFee = 0,
+          arrivalFee = 0,
+          dokdoFee = 0,
+          restaurantFee = 0,
+          eventFee = 0,
+          otherFee = 0,
+          refund = 0,
+          totalPrice = 0,
+        } = reservation;
 
+        // 총 정산값 계산
         totalSettlement =
           departureFee +
           arrivalFee +
@@ -130,11 +140,14 @@ router.post('/monthly/update-block', async (req, res) => {
           otherFee -
           refund;
 
-        // Validate if totalSettlement is NaN and set default
         totalSettlement = isNaN(totalSettlement) ? 0 : totalSettlement;
+
+        // profit 값 계산
+        profit = totalPrice - totalSettlement;
+        profit = isNaN(profit) ? 0 : profit;
       }
 
-      // MongoDB update logic
+      // MongoDB 업데이트
       const result = await Reservation.updateOne(
         { "dailyBlocks.date": new Date(date) },
         {
@@ -145,7 +158,8 @@ router.post('/monthly/update-block', async (req, res) => {
             "dailyBlocks.$.arrival.ecoBlock": sanitizedArrival.ecoBlock,
             "dailyBlocks.$.arrival.bizBlock": sanitizedArrival.bizBlock,
             "dailyBlocks.$.arrival.firstBlock": sanitizedArrival.firstBlock,
-            totalSettlement, // Include totalSettlement in update
+            totalSettlement, // 총 정산값 업데이트
+            profit, // profit 값 업데이트
           },
         },
         { upsert: true }
@@ -160,6 +174,7 @@ router.post('/monthly/update-block', async (req, res) => {
     res.status(500).json({ success: false, message: 'Error updating data: ' + error.message });
   }
 });
+
 
 
 // 엑셀 다운로드
