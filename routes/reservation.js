@@ -16,50 +16,36 @@ router.get('/monthly', async (req, res) => {
   const currentMonth = parseInt(month, 10) || new Date().getMonth() + 1;
 
   try {
-    // 날짜 범위 계산
-    const year = new Date().getFullYear(); // 현재 연도 가져오기
-    const startDate = new Date(Date.UTC(year, currentMonth - 1, 1)); // 월의 첫째 날
-    const endDate = new Date(Date.UTC(year, currentMonth, 0, 23, 59, 59)); // 월의 마지막 날
-
-    if (isNaN(currentMonth) || currentMonth < 1 || currentMonth > 12) {
-      throw new Error('Invalid month parameter');
-    }
+    const startDate = new Date(`2024-${currentMonth}-01`);
+    const endDate = new Date(`2024-${currentMonth}-31`);
 
     const [reservations, ships] = await Promise.all([
-      Reservation.find({
-        $or: [
-          { departureDate: { $gte: startDate, $lt: endDate } },
-          { arrivalDate: { $gte: startDate, $lt: endDate } },
-        ],
-      })
+      Reservation.find({ departureDate: { $gte: startDate, $lt: endDate } })
         .populate({
           path: 'ship',
           select: '_id name', // 필요한 필드만 가져오기
         })
-        .sort({ departureDate: 1, arrivalDate: 1 }), // 정렬
-      Ship.find().sort({ name: 1 }), // 선박 정렬
+        .sort({ departureDate: 1, arrivalDate: 1 }),
+      Ship.find(),
     ]);
 
-    console.log('Reservations fetched:', reservations.length);
-    console.log('Ships fetched:', ships.length);
+    console.log('Reservations fetched:', reservations);
+    console.log('Ships fetched:', ships);
 
-    // reservations 데이터 변환 (ship 정보가 없을 때 대비)
-    const transformedReservations = reservations.map((reservation) => ({
-      ...reservation.toObject(),
-      ship: reservation.ship || null,
-    }));
-
+    // reservations와 ships가 비어있는 경우를 대비
     res.render('monthly-reservations', {
-      reservations: transformedReservations,
+      reservations: reservations.map((reservation) => ({
+        ...reservation.toObject(),
+        ship: reservation.ship || null,
+      })),
       selectedMonth: currentMonth,
       ships,
     });
   } catch (error) {
-    console.error('Error fetching monthly reservations:', error.message);
+    console.error('Error fetching monthly reservations:', error);
     res.status(500).send('Error fetching reservations.');
   }
 });
-
 
 
 
