@@ -262,8 +262,10 @@
       return;
     }
 
-    // value가 숫자인지 확인 (NaN일 경우 기본값 0 설정)
+    // value가 NaN인지 검증하고 기본값 설정
     const validValue = isNaN(value) ? 0 : value;
+
+    console.log(`Updating server with field: ${field}, value: ${validValue}`);
 
     fetch('/status/monthly/update-block', {
       method: 'POST',
@@ -289,6 +291,7 @@
         console.error('Error updating server:', error);
       });
   }
+
 
 
 
