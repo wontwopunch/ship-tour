@@ -12,7 +12,6 @@
     </select>
   </div>
   <button onclick="saveBlockData()">블럭 데이터 저장</button>
-  
   <!-- 테이블 -->
   <div class="table-container">
     <table border="1">
@@ -25,52 +24,55 @@
         <tr>
           <th>월/일/요일</th>
           <th>예약 이코</th>
-          <th>블럭 이코</th>
-          <th>잔여 이코</th>
           <th>예약 비즈</th>
-          <th>블럭 비즈</th>
-          <th>잔여 비즈</th>
           <th>예약 퍼스</th>
+          <th>블럭 이코</th>
+          <th>블럭 비즈</th>
           <th>블럭 퍼스</th>
+          <th>잔여 이코</th>
+          <th>잔여 비즈</th>
           <th>잔여 퍼스</th>
           <th>예약 이코</th>
-          <th>블럭 이코</th>
-          <th>잔여 이코</th>
           <th>예약 비즈</th>
-          <th>블럭 비즈</th>
-          <th>잔여 비즈</th>
           <th>예약 퍼스</th>
+          <th>블럭 이코</th>
+          <th>블럭 비즈</th>
           <th>블럭 퍼스</th>
+          <th>잔여 이코</th>
+          <th>잔여 비즈</th>
           <th>잔여 퍼스</th>
         </tr>
       </thead>
       <tbody>
         <% data.forEach(row => { %>
           <tr>
+            <!-- 날짜 -->
             <td>
               <%= row.date %> 
               (<%= ['일', '월', '화', '수', '목', '금', '토'][new Date(row.date).getDay()] %>)
             </td>
+        
             <!-- 포항출항 -->
             <td><%= row.departure.economy || 0 %></td>
-            <td><input type="number" value="<%= row.departure.ecoBlock || 0 %>" data-field="departure.ecoBlock"></td>
-            <td><%= (row.departure.ecoBlock || 0) - (row.departure.economy || 0) %></td>
             <td><%= row.departure.business || 0 %></td>
-            <td><input type="number" value="<%= row.departure.bizBlock || 0 %>" data-field="departure.bizBlock"></td>
-            <td><%= (row.departure.bizBlock || 0) - (row.departure.business || 0) %></td>
             <td><%= row.departure.first || 0 %></td>
+            <td><input type="number" value="<%= row.departure.ecoBlock || 0 %>" data-field="departure.ecoBlock"></td>
+            <td><input type="number" value="<%= row.departure.bizBlock || 0 %>" data-field="departure.bizBlock"></td>
             <td><input type="number" value="<%= row.departure.firstBlock || 0 %>" data-field="departure.firstBlock"></td>
-            <td><%= (row.departure.firstBlock || 0) - (row.departure.first || 0) %></td>
+            <td data-field="departure.remainingEco"><%= (row.departure.ecoBlock || 0) - (row.departure.economy || 0) %></td>
+            <td data-field="departure.remainingBiz"><%= (row.departure.bizBlock || 0) - (row.departure.business || 0) %></td>
+            <td data-field="departure.remainingFirst"><%= (row.departure.firstBlock || 0) - (row.departure.first || 0) %></td>
+
             <!-- 울릉출항 -->
             <td><%= row.arrival.economy || 0 %></td>
-            <td><input type="number" value="<%= row.arrival.ecoBlock || 0 %>" data-field="arrival.ecoBlock"></td>
-            <td><%= (row.arrival.ecoBlock || 0) - (row.arrival.economy || 0) %></td>
             <td><%= row.arrival.business || 0 %></td>
-            <td><input type="number" value="<%= row.arrival.bizBlock || 0 %>" data-field="arrival.bizBlock"></td>
-            <td><%= (row.arrival.bizBlock || 0) - (row.arrival.business || 0) %></td>
             <td><%= row.arrival.first || 0 %></td>
+            <td><input type="number" value="<%= row.arrival.ecoBlock || 0 %>" data-field="arrival.ecoBlock"></td>
+            <td><input type="number" value="<%= row.arrival.bizBlock || 0 %>" data-field="arrival.bizBlock"></td>
             <td><input type="number" value="<%= row.arrival.firstBlock || 0 %>" data-field="arrival.firstBlock"></td>
-            <td><%= (row.arrival.firstBlock || 0) - (row.arrival.first || 0) %></td>
+            <td data-field="arrival.remainingEco"><%= (row.arrival.ecoBlock || 0) - (row.arrival.economy || 0) %></td>
+            <td data-field="arrival.remainingBiz"><%= (row.arrival.bizBlock || 0) - (row.arrival.business || 0) %></td>
+            <td data-field="arrival.remainingFirst"><%= (row.arrival.firstBlock || 0) - (row.arrival.first || 0) %></td>
           </tr>
         <% }) %>
       </tbody>
@@ -81,11 +83,7 @@
 
 <script>
   function applyFilters() {
-    const month = parseInt(document.getElementById('monthSelect').value, 10);
-    if (isNaN(month) || month < 1 || month > 12) {
-      alert('유효한 월을 선택하세요.');
-      return;
-    }
+    const month = document.getElementById('monthSelect').value;
     window.location.href = `/status/monthly?month=${month}`;
   }
 
@@ -94,35 +92,94 @@
     window.location.href = `/status/monthly/export?month=${month}`;
   }
 
-  document.querySelectorAll('input[type="number"]').forEach(input => {
-    input.addEventListener('input', (event) => {
-      const row = event.target.closest('tr');
-      const type = input.getAttribute('data-field').startsWith('departure') ? 'departure' : 'arrival';
-      calculateRemainingSeats(row, type);
-    });
-    input.addEventListener('blur', (event) => {
-      const row = event.target.closest('tr');
-      const field = event.target.getAttribute('data-field');
-      const value = parseInt(event.target.value, 10);
-      updateServer(row, field, value);
-    });
-  });
+  function calculateRemainingSeats(row) {
+    const ecoBlockInput = row.querySelector('[data-field="departure.ecoBlock"]');
+    const bizBlockInput = row.querySelector('[data-field="departure.bizBlock"]');
+    const firstBlockInput = row.querySelector('[data-field="departure.firstBlock"]');
 
-  function calculateRemainingSeats(row, type) {
-    const economy = parseInt(row.querySelector(`[data-field="${type}.ecoBlock"]`).value, 10) - parseInt(row.querySelector(`[data-field="${type}.economy"]`).innerText, 10);
-    const biz = parseInt(row.querySelector(`[data-field="${type}.bizBlock"]`).value, 10) - parseInt(row.querySelector(`[data-field="${type}.business"]`).innerText, 10);
-    const first = parseInt(row.querySelector(`[data-field="${type}.firstBlock"]`).value, 10) - parseInt(row.querySelector(`[data-field="${type}.first"]`).innerText, 10);
-    row.querySelector(`[data-field="${type}.remainingEco"]`).innerText = economy;
-    row.querySelector(`[data-field="${type}.remainingBiz"]`).innerText = biz;
-    row.querySelector(`[data-field="${type}.remainingFirst"]`).innerText = first;
+    const economySeatsCell = row.querySelector('[data-field="departure.economy"]');
+    const businessSeatsCell = row.querySelector('[data-field="departure.business"]');
+    const firstSeatsCell = row.querySelector('[data-field="departure.first"]');
+
+    const remainingEcoCell = row.querySelector('[data-field="departure.remainingEco"]');
+    const remainingBizCell = row.querySelector('[data-field="departure.remainingBiz"]');
+    const remainingFirstCell = row.querySelector('[data-field="departure.remainingFirst"]');
+
+    if (
+      !ecoBlockInput ||
+      !bizBlockInput ||
+      !firstBlockInput ||
+      !economySeatsCell ||
+      !businessSeatsCell ||
+      !firstSeatsCell ||
+      !remainingEcoCell ||
+      !remainingBizCell ||
+      !remainingFirstCell
+    ) {
+      console.error('Missing elements for calculating remaining seats.');
+      return;
+    }
+
+    const ecoBlock = parseInt(ecoBlockInput.value || 0, 10);
+    const bizBlock = parseInt(bizBlockInput.value || 0, 10);
+    const firstBlock = parseInt(firstBlockInput.value || 0, 10);
+
+    const economySeats = parseInt(economySeatsCell.innerText || 0, 10);
+    const businessSeats = parseInt(businessSeatsCell.innerText || 0, 10);
+    const firstSeats = parseInt(firstSeatsCell.innerText || 0, 10);
+
+    remainingEcoCell.innerText = ecoBlock - economySeats;
+    remainingBizCell.innerText = bizBlock - businessSeats;
+    remainingFirstCell.innerText = firstBlock - firstSeats;
   }
 
-  function updateServer(row, field, value) {
-    const date = row.querySelector('td:first-child').innerText.trim();
-    fetch('/status/monthly/update-block', {
+  function saveBlockData() {
+    const rows = document.querySelectorAll('tbody tr');
+    const updates = [];
+
+    rows.forEach((row) => {
+      const date = row.querySelector('td:first-child')?.innerText.trim();
+      if (!date) return;
+
+      updates.push({
+        date,
+        departure: {
+          ecoBlock: parseInt(row.querySelector('[data-field="departure.ecoBlock"]')?.value || 0, 10),
+          bizBlock: parseInt(row.querySelector('[data-field="departure.bizBlock"]')?.value || 0, 10),
+          firstBlock: parseInt(row.querySelector('[data-field="departure.firstBlock"]')?.value || 0, 10),
+        },
+        arrival: {
+          ecoBlock: parseInt(row.querySelector('[data-field="arrival.ecoBlock"]')?.value || 0, 10),
+          bizBlock: parseInt(row.querySelector('[data-field="arrival.bizBlock"]')?.value || 0, 10),
+          firstBlock: parseInt(row.querySelector('[data-field="arrival.firstBlock"]')?.value || 0, 10),
+        },
+      });
+    });
+
+    fetch('/monthly/update-block', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date, field, value })
-    }).catch(error => console.error(error));
+      body: JSON.stringify({ updates }),
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error('Failed to update block data');
+        return response.json();
+      })
+      .then((data) => {
+        if (data.success) {
+          alert('블럭 데이터가 저장되었습니다.');
+          location.reload();
+        } else {
+          alert('블럭 데이터 저장 중 오류가 발생했습니다.');
+        }
+      })
+      .catch((error) => {
+        console.error('Error saving block data:', error);
+        alert('블럭 데이터 저장 중 오류가 발생했습니다.');
+      });
   }
 </script>
+
+<style>
+  /* 스타일은 동일하게 유지 */
+</style>
