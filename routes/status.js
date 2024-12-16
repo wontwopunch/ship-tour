@@ -8,56 +8,58 @@ const validDate = (date) => date instanceof Date && !isNaN(date.getTime());
 
 // 월별 현황
 router.get('/monthly', async (req, res) => {
-  const currentMonth = parseInt(req.query.month, 10) || new Date().getMonth() + 1;
-
-  if (isNaN(currentMonth) || currentMonth < 1 || currentMonth > 12) {
-    return res.status(400).send('Invalid month parameter');
-  }
+  const { month } = req.query;
+  const currentMonth = parseInt(month, 10) || new Date().getMonth() + 1;
 
   try {
-    const startDate = new Date(Date.UTC(2024, currentMonth - 1, 1));
-    const endDate = new Date(Date.UTC(2024, currentMonth, 1));
+    const year = new Date().getFullYear();
+    const startDate = new Date(Date.UTC(year, currentMonth - 1, 1));
+    const endDate = new Date(Date.UTC(year, currentMonth, 0, 23, 59, 59));
+
+    if (isNaN(currentMonth) || currentMonth < 1 || currentMonth > 12) {
+      throw new Error('Invalid month parameter');
+    }
 
     const reservations = await Reservation.find({
-      $or: [
-        { departureDate: { $gte: startDate, $lt: endDate } },
-        { arrivalDate: { $gte: startDate, $lt: endDate } },
-      ],
-    }).populate('ship');
+      'dailyBlocks.date': { $gte: startDate, $lte: endDate },
+    });
 
-    const dateMap = reservations.reduce((map, reservation) => {
-      const addToMap = (key, type, seats) => {
-        if (!map[key]) {
-          map[key] = { date: key, departure: {}, arrival: {} };
+    // 날짜별 데이터를 정리
+    const data = [];
+    reservations.forEach((reservation) => {
+      reservation.dailyBlocks.forEach((block) => {
+        const blockDate = block.date.toISOString().split('T')[0];
+        if (block.date >= startDate && block.date <= endDate) {
+          data.push({
+            date: blockDate,
+            departure: {
+              economy: block.departure.ecoBlock || 0,
+              business: block.departure.bizBlock || 0,
+              first: block.departure.firstBlock || 0,
+            },
+            arrival: {
+              economy: block.arrival.ecoBlock || 0,
+              business: block.arrival.bizBlock || 0,
+              first: block.arrival.firstBlock || 0,
+            },
+          });
         }
-        map[key][type] = {
-          economy: (map[key][type]?.economy || 0) + (seats.economySeats || 0),
-          business: (map[key][type]?.business || 0) + (seats.businessSeats || 0),
-          first: (map[key][type]?.first || 0) + (seats.firstSeats || 0),
-        };
-      };
+      });
+    });
 
-      if (reservation.departureDate) {
-        const date = reservation.departureDate.toISOString().split('T')[0];
-        addToMap(date, 'departure', reservation);
-      }
+    // 날짜 정렬
+    data.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-      if (reservation.arrivalDate) {
-        const date = reservation.arrivalDate.toISOString().split('T')[0];
-        addToMap(date, 'arrival', reservation);
-      }
-
-      return map;
-    }, {});
-
-    const data = Object.values(dateMap).sort((a, b) => new Date(a.date) - new Date(b.date));
-
-    res.render('monthly-status', { data, currentMonth });
+    res.render('monthly-status', {
+      data,
+      currentMonth,
+    });
   } catch (error) {
     console.error('Error fetching monthly status:', error.message);
-    res.status(500).send('Error fetching data: ' + error.message);
+    res.status(500).send('Error fetching monthly status.');
   }
 });
+
 
 const { ObjectId } = require('mongoose').Types;
 
