@@ -153,18 +153,32 @@
     const updates = Array.from(rows).map((row) => {
       const date = row.querySelector('td:first-child')?.innerText.trim();
       if (!date) return null; // 날짜가 없으면 건너뜀
+
+      // 각 필드 데이터를 숫자로 변환
+      const departureEcoBlock = parseInt(row.querySelector('[data-field="departure.ecoBlock"]')?.textContent || 0, 10);
+      const departureBizBlock = parseInt(row.querySelector('[data-field="departure.bizBlock"]')?.textContent || 0, 10);
+      const departureFirstBlock = parseInt(row.querySelector('[data-field="departure.firstBlock"]')?.textContent || 0, 10);
+
+      const arrivalEcoBlock = parseInt(row.querySelector('[data-field="arrival.ecoBlock"]')?.textContent || 0, 10);
+      const arrivalBizBlock = parseInt(row.querySelector('[data-field="arrival.bizBlock"]')?.textContent || 0, 10);
+      const arrivalFirstBlock = parseInt(row.querySelector('[data-field="arrival.firstBlock"]')?.textContent || 0, 10);
+
+      // balance 필드 기본값 설정
+      const balance = parseInt(row.querySelector('[data-field="balance"]')?.textContent || 0, 10);
+
       return {
         date,
         departure: {
-          ecoBlock: parseInt(row.querySelector('[data-field="departure.ecoBlock"]')?.textContent || 0, 10),
-          bizBlock: parseInt(row.querySelector('[data-field="departure.bizBlock"]')?.textContent || 0, 10),
-          firstBlock: parseInt(row.querySelector('[data-field="departure.firstBlock"]')?.textContent || 0, 10),
+          ecoBlock: departureEcoBlock,
+          bizBlock: departureBizBlock,
+          firstBlock: departureFirstBlock,
         },
         arrival: {
-          ecoBlock: parseInt(row.querySelector('[data-field="arrival.ecoBlock"]')?.textContent || 0, 10),
-          bizBlock: parseInt(row.querySelector('[data-field="arrival.bizBlock"]')?.textContent || 0, 10),
-          firstBlock: parseInt(row.querySelector('[data-field="arrival.firstBlock"]')?.textContent || 0, 10),
+          ecoBlock: arrivalEcoBlock,
+          bizBlock: arrivalBizBlock,
+          firstBlock: arrivalFirstBlock,
         },
+        balance, // balance 데이터 추가
       };
     }).filter(Boolean); // 유효한 업데이트만 필터링
 
@@ -191,6 +205,7 @@
         console.error('Error saving block data:', error);
       });
   }
+
 
   function updateServer(row, field, value) {
     const date = row.querySelector('td:first-child')?.innerText.trim();

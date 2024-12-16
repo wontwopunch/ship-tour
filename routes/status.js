@@ -83,7 +83,7 @@ router.get('/monthly', async (req, res) => {
 router.post('/monthly/update-block', async (req, res) => {
   const { updates } = req.body;
 
-  console.log('Received updates:', JSON.stringify(updates, null, 2)); // 요청 데이터 출력
+  console.log('Received updates:', JSON.stringify(updates, null, 2));
 
   if (!Array.isArray(updates)) {
     return res.status(400).json({ success: false, message: 'Invalid input data' });
@@ -91,13 +91,14 @@ router.post('/monthly/update-block', async (req, res) => {
 
   try {
     for (const update of updates) {
-      const { date, departure = {}, arrival = {} } = update;
+      const { date, departure = {}, arrival = {}, balance } = update;
 
       if (!date) {
         console.warn('Skipping update due to missing date:', update);
         continue;
       }
 
+      // 기본값으로 설정된 값 검증
       const sanitizedDeparture = {
         ecoBlock: !isNaN(Number(departure.ecoBlock)) ? Number(departure.ecoBlock) : 0,
         bizBlock: !isNaN(Number(departure.bizBlock)) ? Number(departure.bizBlock) : 0,
@@ -110,8 +111,10 @@ router.post('/monthly/update-block', async (req, res) => {
         firstBlock: !isNaN(Number(arrival.firstBlock)) ? Number(arrival.firstBlock) : 0,
       };
 
-      console.log('Sanitized data:', { date, sanitizedDeparture, sanitizedArrival }); // 데이터 검증
+      // balance 필드에 대한 검증 및 기본값 설정
+      const sanitizedBalance = !isNaN(Number(balance)) ? Number(balance) : 0;
 
+      // MongoDB 업데이트
       const result = await Reservation.updateOne(
         { "dailyBlocks.date": new Date(date) },
         {
@@ -122,6 +125,7 @@ router.post('/monthly/update-block', async (req, res) => {
             "dailyBlocks.$.arrival.ecoBlock": sanitizedArrival.ecoBlock,
             "dailyBlocks.$.arrival.bizBlock": sanitizedArrival.bizBlock,
             "dailyBlocks.$.arrival.firstBlock": sanitizedArrival.firstBlock,
+            balance: sanitizedBalance, // balance 업데이트 추가
           },
         },
         { upsert: true }
@@ -136,7 +140,6 @@ router.post('/monthly/update-block', async (req, res) => {
     res.status(500).json({ success: false, message: 'Error updating data: ' + error.message });
   }
 });
-
 
 
 
