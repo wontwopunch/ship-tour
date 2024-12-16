@@ -48,7 +48,7 @@
         <% data.forEach(row => { %>
           <tr data-reservation-id="<%= row.reservationId || '' %>">
             <td>
-              <%= new Date(row.date).toISOString().split('T')[0] %> 
+              <%= row.date %>
               (<%= ['일', '월', '화', '수', '목', '금', '토'][new Date(row.date).getDay()] %>)
             </td>
             <td data-field="departure.economy"><%= row.departure.economy || 0 %></td>
@@ -150,19 +150,21 @@
   function saveBlockData() {
     const rows = document.querySelectorAll('tbody tr');
     const updates = Array.from(rows).map((row) => {
-      const reservationId = row.getAttribute('data-reservation-id') || null;
-      const date = row.querySelector('td:first-child')?.innerText.trim();
-      const ship = row.querySelector('select[data-field="ship"]')?.value || null;
+      const dateCell = row.querySelector('td:first-child');
+      const reservationId = row.getAttribute('data-reservation-id');
 
-      if (!date || (!reservationId && !ship)) {
-        console.warn('Skipping row due to missing required fields:', { reservationId, date, ship });
-        return null;
+      if (!dateCell || !reservationId) {
+        console.warn('Skipping row due to missing date or reservationId:', {
+          date: dateCell?.innerText.trim(),
+          reservationId,
+        });
+        return null; // 유효하지 않은 행 건너뜀
       }
 
+      const date = dateCell.innerText.trim().split(' ')[0]; // 날짜만 가져오기
       return {
-        reservationId, // reservationId가 없으면 null
+        reservationId,
         date,
-        ship, // ship 필드 추가
         departure: {
           ecoBlock: parseInt(row.querySelector('[data-field="departure.ecoBlock"]')?.innerText || 0, 10),
           bizBlock: parseInt(row.querySelector('[data-field="departure.bizBlock"]')?.innerText || 0, 10),
@@ -174,10 +176,11 @@
           firstBlock: parseInt(row.querySelector('[data-field="arrival.firstBlock"]')?.innerText || 0, 10),
         },
       };
-    }).filter(Boolean);
+    }).filter(Boolean); // 유효한 행만 필터링
 
     if (updates.length === 0) {
-      alert('유효한 데이터가 없습니다. 날짜 및 선박을 확인하세요.');
+      console.warn('No updates to send. Make sure rows contain valid data.');
+      alert('유효한 데이터가 없습니다. 날짜와 예약 ID를 확인하세요.');
       return;
     }
 
@@ -189,13 +192,15 @@
       .then((response) => response.json())
       .then((data) => {
         if (data.success) {
-          alert('데이터가 저장되었습니다.');
+          alert('블럭 데이터가 저장되었습니다.');
+          location.reload(); // 페이지 새로고침
         } else {
-          alert('데이터 저장 중 오류가 발생했습니다.');
+          alert('블럭 데이터 저장 중 오류가 발생했습니다.');
         }
       })
       .catch((error) => {
         console.error('Error saving block data:', error);
+        alert('저장 중 오류가 발생했습니다. 콘솔을 확인하세요.');
       });
   }
 
