@@ -54,24 +54,24 @@
             <td data-field="departure.economy"><%= row.departure.economy || 0 %></td>
             <td data-field="departure.business"><%= row.departure.business || 0 %></td>
             <td data-field="departure.first"><%= row.departure.first || 0 %></td>
-            <td data-field="departure.ecoBlock" contenteditable="true"><%= row.departure.ecoBlock || 0 %></td>
-            <td data-field="departure.bizBlock" contenteditable="true"><%= row.departure.bizBlock || 0 %></td>
-            <td data-field="departure.firstBlock" contenteditable="true"><%= row.departure.firstBlock || 0 %></td>
+            <td data-editable="true" data-field="departure.ecoBlock"><%= row.departure.ecoBlock || 0 %></td>
+            <td data-editable="true" data-field="departure.bizBlock"><%= row.departure.bizBlock || 0 %></td>
+            <td data-editable="true" data-field="departure.firstBlock"><%= row.departure.firstBlock || 0 %></td>
             <td data-field="departure.remainingEco"><%= (row.departure.ecoBlock || 0) - (row.departure.economy || 0) %></td>
             <td data-field="departure.remainingBiz"><%= (row.departure.bizBlock || 0) - (row.departure.business || 0) %></td>
             <td data-field="departure.remainingFirst"><%= (row.departure.firstBlock || 0) - (row.departure.first || 0) %></td>
             <td data-field="arrival.economy"><%= row.arrival.economy || 0 %></td>
             <td data-field="arrival.business"><%= row.arrival.business || 0 %></td>
             <td data-field="arrival.first"><%= row.arrival.first || 0 %></td>
-            <td data-field="arrival.ecoBlock" contenteditable="true"><%= row.arrival.ecoBlock || 0 %></td>
-            <td data-field="arrival.bizBlock" contenteditable="true"><%= row.arrival.bizBlock || 0 %></td>
-            <td data-field="arrival.firstBlock" contenteditable="true"><%= row.arrival.firstBlock || 0 %></td>
+            <td data-editable="true" data-field="arrival.ecoBlock"><%= row.arrival.ecoBlock || 0 %></td>
+            <td data-editable="true" data-field="arrival.bizBlock"><%= row.arrival.bizBlock || 0 %></td>
+            <td data-editable="true" data-field="arrival.firstBlock"><%= row.arrival.firstBlock || 0 %></td>
             <td data-field="arrival.remainingEco"><%= (row.arrival.ecoBlock || 0) - (row.arrival.economy || 0) %></td>
             <td data-field="arrival.remainingBiz"><%= (row.arrival.bizBlock || 0) - (row.arrival.business || 0) %></td>
             <td data-field="arrival.remainingFirst"><%= (row.arrival.firstBlock || 0) - (row.arrival.first || 0) %></td>
           </tr>
         <% }) %>
-      </tbody>
+      </tbody>      
     </table>
   </div>
   <button class="download-btn" onclick="downloadExcel()">엑셀 다운로드</button>
@@ -152,28 +152,27 @@
     const updates = Array.from(rows).map((row) => {
       const dateElement = row.querySelector('td:first-child');
       const date = dateElement?.innerText.trim();
-
       const reservationId = row.getAttribute('data-reservation-id'); // Reservation ID
+
       if (!date || !reservationId) {
-        console.warn(`Skipping row due to missing date or reservationId:`, { date, reservationId });
+        console.warn('Skipping row due to missing date or reservationId:', { date, reservationId });
         return null;
       }
 
-      const departure = {
-        ecoBlock: parseInt(row.querySelector('[data-field="departure.ecoBlock"]')?.innerText || 0, 10),
-        bizBlock: parseInt(row.querySelector('[data-field="departure.bizBlock"]')?.innerText || 0, 10),
-        firstBlock: parseInt(row.querySelector('[data-field="departure.firstBlock"]')?.innerText || 0, 10),
+      return {
+        reservationId,
+        date: date.split(' ')[0], // "2024-12-16 (월)" -> "2024-12-16"
+        departure: {
+          ecoBlock: parseInt(row.querySelector('[data-field="departure.ecoBlock"]')?.innerText || 0, 10),
+          bizBlock: parseInt(row.querySelector('[data-field="departure.bizBlock"]')?.innerText || 0, 10),
+          firstBlock: parseInt(row.querySelector('[data-field="departure.firstBlock"]')?.innerText || 0, 10),
+        },
+        arrival: {
+          ecoBlock: parseInt(row.querySelector('[data-field="arrival.ecoBlock"]')?.innerText || 0, 10),
+          bizBlock: parseInt(row.querySelector('[data-field="arrival.bizBlock"]')?.innerText || 0, 10),
+          firstBlock: parseInt(row.querySelector('[data-field="arrival.firstBlock"]')?.innerText || 0, 10),
+        },
       };
-
-      const arrival = {
-        ecoBlock: parseInt(row.querySelector('[data-field="arrival.ecoBlock"]')?.innerText || 0, 10),
-        bizBlock: parseInt(row.querySelector('[data-field="arrival.bizBlock"]')?.innerText || 0, 10),
-        firstBlock: parseInt(row.querySelector('[data-field="arrival.firstBlock"]')?.innerText || 0, 10),
-      };
-
-      console.log('Row data:', { reservationId, date, departure, arrival });
-
-      return { reservationId, date, departure, arrival };
     }).filter(Boolean);
 
     if (updates.length === 0) {
@@ -194,7 +193,7 @@
         console.log('Server Response:', data);
         if (data.success) {
           alert('블럭 데이터가 저장되었습니다.');
-          location.reload(); // 데이터 갱신을 위해 새로고침
+          location.reload();
         } else {
           alert('블럭 데이터 저장 중 오류가 발생했습니다.');
         }
@@ -203,6 +202,7 @@
         console.error('Error saving block data:', error);
       });
   }
+
 
 
   function updateServer(row, field, value) {

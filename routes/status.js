@@ -64,8 +64,8 @@ const { ObjectId } = require('mongoose').Types;
 router.post('/monthly/update-block', async (req, res) => {
   const { updates } = req.body;
 
-  if (!Array.isArray(updates)) {
-    return res.status(400).json({ success: false, message: 'Invalid input data' });
+  if (!Array.isArray(updates) || updates.length === 0) {
+    return res.status(400).json({ success: false, message: 'Invalid or empty updates array.' });
   }
 
   try {
@@ -74,6 +74,7 @@ router.post('/monthly/update-block', async (req, res) => {
     for (const update of updates) {
       const { reservationId, date, departure = {}, arrival = {} } = update;
 
+      // 유효성 검증
       if (!reservationId || !date) {
         console.warn('Skipping update due to missing reservationId or date:', update);
         continue;
@@ -91,35 +92,35 @@ router.post('/monthly/update-block', async (req, res) => {
         firstBlock: Number(arrival.firstBlock) || 0,
       };
 
-      console.log(`Updating Reservation ID: ${reservationId}, Date: ${date}`);
+      console.log(`Processing update for Reservation ID: ${reservationId}, Date: ${date}`);
 
-      const result = await Reservation.updateOne(
-        { _id: reservationId, "dailyBlocks.date": new Date(date) },
-        {
-          $set: {
-            "dailyBlocks.$.departure": sanitizedDeparture,
-            "dailyBlocks.$.arrival": sanitizedArrival,
-          },
-        },
-        { upsert: true }
-      );
-
-      if (result.matchedCount === 0) {
-        console.log(`No matching dailyBlock found for date: ${date}. Adding new block.`);
-        await Reservation.findByIdAndUpdate(
-          reservationId,
-          {
-            $push: {
-              dailyBlocks: {
-                date: new Date(date),
-                departure: sanitizedDeparture,
-                arrival: sanitizedArrival,
-              },
-            },
-          }
-        );
+      // 먼저 dailyBlock이 존재하는지 확인
+      const reservation = await Reservation.findById(reservationId);
+      if (!reservation) {
+        console.warn(`Reservation not found for ID: ${reservationId}`);
+        continue;
       }
 
+      const blockIndex = reservation.dailyBlocks.findIndex(
+        (block) => block.date.toISOString().split('T')[0] === new Date(date).toISOString().split('T')[0]
+      );
+
+      if (blockIndex > -1) {
+        // 기존 블록 업데이트
+        reservation.dailyBlocks[blockIndex].departure = sanitizedDeparture;
+        reservation.dailyBlocks[blockIndex].arrival = sanitizedArrival;
+        console.log(`Updated existing block for date: ${date}`);
+      } else {
+        // 새로운 블록 추가
+        reservation.dailyBlocks.push({
+          date: new Date(date),
+          departure: sanitizedDeparture,
+          arrival: sanitizedArrival,
+        });
+        console.log(`Added new block for date: ${date}`);
+      }
+
+      await reservation.save();
       updatedBlocks.push({ reservationId, date, departure: sanitizedDeparture, arrival: sanitizedArrival });
     }
 
@@ -129,6 +130,7 @@ router.post('/monthly/update-block', async (req, res) => {
     res.status(500).json({ success: false, message: 'Error updating data: ' + error.message });
   }
 });
+
 
 
 // 엑셀 다운로드
