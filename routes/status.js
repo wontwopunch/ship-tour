@@ -5,36 +5,30 @@ const ExcelJS = require('exceljs');
 
 const validDate = (date) => date instanceof Date && !isNaN(date.getTime());
 
-
 // 월별 현황
 router.get('/monthly', async (req, res) => {
   const { month } = req.query;
   const currentMonth = parseInt(month, 10) || new Date().getMonth() + 1;
 
   try {
-    // 월 범위 검증
     if (isNaN(currentMonth) || currentMonth < 1 || currentMonth > 12) {
       throw new Error('Invalid month parameter');
     }
 
-    // 시작일과 종료일 생성
     const startDate = new Date(Date.UTC(2024, currentMonth - 1, 1));
     const endDate = new Date(Date.UTC(2024, currentMonth, 1));
 
-    // 날짜 유효성 검증
     if (!validDate(startDate) || !validDate(endDate)) {
       throw new Error(`Invalid date range: startDate=${startDate}, endDate=${endDate}`);
     }
 
-    // 데이터 조회
-    const filter = {
+    const reservations = await Reservation.find({
       $or: [
         { departureDate: { $gte: startDate, $lt: endDate } },
         { arrivalDate: { $gte: startDate, $lt: endDate } },
       ],
-    };
+    }).populate('ship');
 
-    const reservations = await Reservation.find(filter).populate('ship');
     const data = [];
     const dateMap = new Map();
 
@@ -60,9 +54,6 @@ router.get('/monthly', async (req, res) => {
           economy: (record.departure.economy || 0) + (reservation.economySeats || 0),
           business: (record.departure.business || 0) + (reservation.businessSeats || 0),
           first: (record.departure.first || 0) + (reservation.firstSeats || 0),
-          ecoBlock: reservation.ship?.eco || 0,
-          bizBlock: reservation.ship?.biz || 0,
-          firstBlock: reservation.ship?.first || 0,
         };
       }
 
@@ -75,26 +66,20 @@ router.get('/monthly', async (req, res) => {
           economy: (record.arrival.economy || 0) + (reservation.economySeats || 0),
           business: (record.arrival.business || 0) + (reservation.businessSeats || 0),
           first: (record.arrival.first || 0) + (reservation.firstSeats || 0),
-          ecoBlock: reservation.ship?.eco || 0,
-          bizBlock: reservation.ship?.biz || 0,
-          firstBlock: reservation.ship?.first || 0,
         };
       }
     });
 
     data.push(...Array.from(dateMap.values()).sort((a, b) => new Date(a.date) - new Date(b.date)));
 
-    res.render('monthly-status', {
-      data,
-      currentMonth,
-    });
+    res.render('monthly-status', { data, currentMonth });
   } catch (error) {
     console.error('Error fetching monthly status:', error.message);
     res.status(400).send('Error fetching data: ' + error.message);
   }
 });
 
-
+// 블록 데이터 업데이트
 router.post('/monthly/update-block', async (req, res) => {
   const { updates } = req.body;
 
@@ -165,16 +150,14 @@ router.post('/monthly/update-block', async (req, res) => {
   }
 });
 
-
-
 // 엑셀 다운로드
 router.get('/monthly/export', async (req, res) => {
   const { month } = req.query;
   const currentMonth = parseInt(month, 10) || new Date().getMonth() + 1;
 
   try {
-    const startDate = new Date(`2025-${currentMonth}-01`);
-    const endDate = new Date(`2025-${currentMonth + 1}-01`);
+    const startDate = new Date(Date.UTC(2025, currentMonth - 1, 1));
+    const endDate = new Date(Date.UTC(2025, currentMonth, 1));
 
     const reservations = await Reservation.find({
       $or: [
@@ -183,7 +166,6 @@ router.get('/monthly/export', async (req, res) => {
       ],
     }).populate('ship');
 
-    const rows = [];
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Monthly Status');
 
@@ -199,8 +181,6 @@ router.get('/monthly/export', async (req, res) => {
       { header: '잔여 비즈', key: 'remainingBusinessSeats', width: 10 },
       { header: '잔여 퍼스', key: 'remainingFirstSeats', width: 10 },
     ];
-
-    rows.forEach((row) => sheet.addRow(row));
 
     reservations.forEach((reservation) => {
       const departureDate = reservation.departureDate?.toISOString().split('T')[0];
