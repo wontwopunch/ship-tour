@@ -48,7 +48,7 @@
         <% data.forEach(row => { %>
           <tr data-reservation-id="<%= row.reservationId || '' %>">
             <td>
-              <%= row.date %>
+              <%= new Date(row.date).toISOString().split('T')[0] %> 
               (<%= ['일', '월', '화', '수', '목', '금', '토'][new Date(row.date).getDay()] %>)
             </td>
             <td data-field="departure.economy"><%= row.departure.economy || 0 %></td>
@@ -150,19 +150,16 @@
   function saveBlockData() {
     const rows = document.querySelectorAll('tbody tr');
     const updates = Array.from(rows).map((row) => {
+      const reservationId = row.getAttribute('data-id'); // 행에서 예약 ID 가져오기
       const dateCell = row.querySelector('td:first-child');
-      const reservationId = row.getAttribute('data-reservation-id');
+      const rawDate = dateCell?.innerText.trim();
+      const date = rawDate ? rawDate.split(' ')[0] : null; // "2024-12-16 (월)"에서 "2024-12-16" 추출
 
-      // 유효성 검사
-      if (!dateCell || !reservationId) {
-        console.warn('Skipping row due to missing date or reservationId:', {
-          date: dateCell?.innerText.trim(),
-          reservationId,
-        });
-        return null; // 유효하지 않은 행 건너뜀
+      if (!reservationId || !date) {
+        console.warn('Skipping row due to missing date or reservationId:', { reservationId, date });
+        return null;
       }
 
-      const date = dateCell.innerText.trim().split(' ')[0]; // 날짜만 가져오기
       return {
         reservationId,
         date,
@@ -177,11 +174,10 @@
           firstBlock: parseInt(row.querySelector('[data-field="arrival.firstBlock"]')?.innerText || 0, 10),
         },
       };
-    }).filter(Boolean); // 유효한 행만 필터링
+    }).filter(Boolean); // 유효한 데이터만 필터링
 
     if (updates.length === 0) {
       console.warn('No updates to send. Make sure rows contain valid data.');
-      alert('유효한 데이터가 없습니다. 날짜와 예약 ID를 확인하세요.');
       return;
     }
 
@@ -194,16 +190,17 @@
       .then((data) => {
         if (data.success) {
           alert('블럭 데이터가 저장되었습니다.');
-          location.reload(); // 페이지 새로고침
+          location.reload(); // 저장 후 페이지 새로고침
         } else {
           alert('블럭 데이터 저장 중 오류가 발생했습니다.');
+          console.error(data.message);
         }
       })
       .catch((error) => {
         console.error('Error saving block data:', error);
-        alert('저장 중 오류가 발생했습니다. 콘솔을 확인하세요.');
       });
   }
+
 
 
   function updateServer(row, field, value) {
