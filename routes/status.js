@@ -5,7 +5,6 @@ const ExcelJS = require('exceljs');
 
 const validDate = (date) => date instanceof Date && !isNaN(date.getTime());
 
-const { ObjectId } = require('mongoose').Types;
 
 // 월별 현황
 router.get('/monthly', async (req, res) => {
@@ -82,6 +81,8 @@ router.get('/monthly', async (req, res) => {
 });
 
 
+const { ObjectId } = require('mongoose').Types;
+
 router.post('/monthly/update-block', async (req, res) => {
   const { updates } = req.body;
 
@@ -112,8 +113,9 @@ router.post('/monthly/update-block', async (req, res) => {
         firstBlock: !isNaN(Number(arrival.firstBlock)) ? Number(arrival.firstBlock) : 0,
       };
 
-      const result = await Reservation.updateOne(
-        { _id: new ObjectId("675fc7cf3cd9be11fae5bd52"), "dailyBlocks.date": new Date(date) },
+      // 먼저 조건에 맞는 dailyBlocks 항목을 업데이트
+      const updateResult = await Reservation.updateOne(
+        { "dailyBlocks.date": new Date(date) },
         {
           $set: {
             "dailyBlocks.$.departure.ecoBlock": sanitizedDeparture.ecoBlock,
@@ -123,14 +125,16 @@ router.post('/monthly/update-block', async (req, res) => {
             "dailyBlocks.$.arrival.bizBlock": sanitizedArrival.bizBlock,
             "dailyBlocks.$.arrival.firstBlock": sanitizedArrival.firstBlock,
           },
-        },
-        { upsert: true }
+        }
       );
 
-      if (result.modifiedCount === 0 && result.upsertedCount === 0) {
-        // 일치하는 블록이 없을 경우 새로 추가
+      console.log(`Update result for date ${date}:`, updateResult);
+
+      // 조건에 맞는 항목이 없을 경우 새 dailyBlocks 추가
+      if (updateResult.modifiedCount === 0) {
+        console.log(`No matching dailyBlocks for date ${date}. Adding new block.`);
         await Reservation.updateOne(
-          { _id: new ObjectId("675fc7cf3cd9be11fae5bd52") },
+          { _id: new ObjectId("675fc7cf3cd9be11fae5bd52") }, // 필요한 경우 ObjectId 교체
           {
             $push: {
               dailyBlocks: {
@@ -142,8 +146,6 @@ router.post('/monthly/update-block', async (req, res) => {
           }
         );
       }
-
-      console.log(`Update result for date ${date}:`, result);
     }
 
     res.json({ success: true, message: 'Block data updated successfully' });
