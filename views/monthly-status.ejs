@@ -11,7 +11,8 @@
       <% } %>
     </select>
   </div>
-  <button onclick="saveBlockData()">블럭 데이터 저장</button>
+  <button class="save-btn" onclick="saveBlockData()">블럭 데이터 저장</button>
+  
   <!-- 테이블 -->
   <div class="table-container">
     <table border="1">
@@ -46,13 +47,10 @@
       <tbody>
         <% data.forEach(row => { %>
           <tr>
-            <!-- 날짜 -->
             <td>
               <%= row.date %> 
               (<%= ['일', '월', '화', '수', '목', '금', '토'][new Date(row.date).getDay()] %>)
             </td>
-        
-            <!-- 포항출항 -->
             <td><%= row.departure.economy || 0 %></td>
             <td><%= row.departure.business || 0 %></td>
             <td><%= row.departure.first || 0 %></td>
@@ -62,8 +60,6 @@
             <td data-field="departure.remainingEco"><%= (row.departure.ecoBlock || 0) - (row.departure.economy || 0) %></td>
             <td data-field="departure.remainingBiz"><%= (row.departure.bizBlock || 0) - (row.departure.business || 0) %></td>
             <td data-field="departure.remainingFirst"><%= (row.departure.firstBlock || 0) - (row.departure.first || 0) %></td>
-
-            <!-- 울릉출항 -->
             <td><%= row.arrival.economy || 0 %></td>
             <td><%= row.arrival.business || 0 %></td>
             <td><%= row.arrival.first || 0 %></td>
@@ -78,7 +74,7 @@
       </tbody>
     </table>
   </div>
-  <button onclick="downloadExcel()">엑셀 다운로드</button>
+  <button class="download-btn" onclick="downloadExcel()">엑셀 다운로드</button>
 </div>
 
 <script>
@@ -92,56 +88,35 @@
     window.location.href = `/status/monthly/export?month=${month}`;
   }
 
-  function calculateRemainingSeats(row) {
-    const ecoBlockInput = row.querySelector('[data-field="departure.ecoBlock"]');
-    const bizBlockInput = row.querySelector('[data-field="departure.bizBlock"]');
-    const firstBlockInput = row.querySelector('[data-field="departure.firstBlock"]');
+  function calculateRemainingSeats(row, type) {
+    const economyInput = row.querySelector(`[data-field="${type}.ecoBlock"]`);
+    const businessInput = row.querySelector(`[data-field="${type}.bizBlock"]`);
+    const firstInput = row.querySelector(`[data-field="${type}.firstBlock"]`);
 
-    const economySeatsCell = row.querySelector('[data-field="departure.economy"]');
-    const businessSeatsCell = row.querySelector('[data-field="departure.business"]');
-    const firstSeatsCell = row.querySelector('[data-field="departure.first"]');
+    const economyReserved = row.querySelector(`[data-field="${type}.economy"]`);
+    const businessReserved = row.querySelector(`[data-field="${type}.business"]`);
+    const firstReserved = row.querySelector(`[data-field="${type}.first"]`);
 
-    const remainingEcoCell = row.querySelector('[data-field="departure.remainingEco"]');
-    const remainingBizCell = row.querySelector('[data-field="departure.remainingBiz"]');
-    const remainingFirstCell = row.querySelector('[data-field="departure.remainingFirst"]');
+    const remainingEco = row.querySelector(`[data-field="${type}.remainingEco"]`);
+    const remainingBiz = row.querySelector(`[data-field="${type}.remainingBiz"]`);
+    const remainingFirst = row.querySelector(`[data-field="${type}.remainingFirst"]`);
 
-    if (
-      !ecoBlockInput ||
-      !bizBlockInput ||
-      !firstBlockInput ||
-      !economySeatsCell ||
-      !businessSeatsCell ||
-      !firstSeatsCell ||
-      !remainingEcoCell ||
-      !remainingBizCell ||
-      !remainingFirstCell
-    ) {
-      console.error('Missing elements for calculating remaining seats.');
+    if (!economyInput || !businessInput || !firstInput || !economyReserved || !businessReserved || !firstReserved || !remainingEco || !remainingBiz || !remainingFirst) {
+      console.error(`Missing elements for type ${type}`);
       return;
     }
 
-    const ecoBlock = parseInt(ecoBlockInput.value || 0, 10);
-    const bizBlock = parseInt(bizBlockInput.value || 0, 10);
-    const firstBlock = parseInt(firstBlockInput.value || 0, 10);
-
-    const economySeats = parseInt(economySeatsCell.innerText || 0, 10);
-    const businessSeats = parseInt(businessSeatsCell.innerText || 0, 10);
-    const firstSeats = parseInt(firstSeatsCell.innerText || 0, 10);
-
-    remainingEcoCell.innerText = ecoBlock - economySeats;
-    remainingBizCell.innerText = bizBlock - businessSeats;
-    remainingFirstCell.innerText = firstBlock - firstSeats;
+    remainingEco.innerText = parseInt(economyInput.value || 0, 10) - parseInt(economyReserved.innerText || 0, 10);
+    remainingBiz.innerText = parseInt(businessInput.value || 0, 10) - parseInt(businessReserved.innerText || 0, 10);
+    remainingFirst.innerText = parseInt(firstInput.value || 0, 10) - parseInt(firstReserved.innerText || 0, 10);
   }
 
   function saveBlockData() {
     const rows = document.querySelectorAll('tbody tr');
-    const updates = [];
-
-    rows.forEach((row) => {
+    const updates = Array.from(rows).map((row) => {
       const date = row.querySelector('td:first-child')?.innerText.trim();
-      if (!date) return;
-
-      updates.push({
+      if (!date) return null;
+      return {
         date,
         departure: {
           ecoBlock: parseInt(row.querySelector('[data-field="departure.ecoBlock"]')?.value || 0, 10),
@@ -153,18 +128,15 @@
           bizBlock: parseInt(row.querySelector('[data-field="arrival.bizBlock"]')?.value || 0, 10),
           firstBlock: parseInt(row.querySelector('[data-field="arrival.firstBlock"]')?.value || 0, 10),
         },
-      });
-    });
+      };
+    }).filter(Boolean);
 
-    fetch('/monthly/update-block', {
+    fetch('/status/monthly/update-block', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ updates }),
     })
-      .then((response) => {
-        if (!response.ok) throw new Error('Failed to update block data');
-        return response.json();
-      })
+      .then((response) => response.json())
       .then((data) => {
         if (data.success) {
           alert('블럭 데이터가 저장되었습니다.');
@@ -175,11 +147,139 @@
       })
       .catch((error) => {
         console.error('Error saving block data:', error);
-        alert('블럭 데이터 저장 중 오류가 발생했습니다.');
       });
   }
 </script>
 
 <style>
-  /* 스타일은 동일하게 유지 */
+  /* 컨테이너 스타일 */
+  .container {
+    margin: 20px auto;
+    max-width: 1200px;
+    font-family: Arial, sans-serif;
+  }
+
+  /* 제목 스타일 */
+  h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 20px;
+  }
+
+  /* 필터 섹션 스타일 */
+  .filters {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 15px;
+  }
+
+  .filters label {
+    font-weight: bold;
+  }
+
+  .filters select {
+    padding: 5px;
+    font-size: 14px;
+  }
+
+  button {
+    padding: 10px 15px;
+    font-size: 14px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  button:hover {
+    background-color: #0056b3;
+  }
+
+  /* 테이블 스타일 */
+  .table-container {
+    overflow-x: auto;
+    margin-top: 20px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+  }
+
+  table th, table td {
+    border: 1px solid #ccc;
+    padding: 10px;
+    white-space: nowrap;
+  }
+
+  table th {
+    background-color: #007bff;
+    color: white;
+  }
+
+  table tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+
+  table tr:hover {
+    background-color: #f1f1f1;
+  }
+
+  /* 잔여 좌석 경고 색상 */
+  td[data-field*="remainingEco"],
+  td[data-field*="remainingBiz"],
+  td[data-field*="remainingFirst"] {
+    font-weight: bold;
+  }
+
+  td[data-field*="remainingEco"]:not(:empty):hover,
+  td[data-field*="remainingBiz"]:not(:empty):hover,
+  td[data-field*="remainingFirst"]:not(:empty):hover {
+    background-color: #ffe6e6;
+  }
+
+  td[data-field*="remainingEco"][style*="color: red"],
+  td[data-field*="remainingBiz"][style*="color: red"],
+  td[data-field*="remainingFirst"][style*="color: red"] {
+    background-color: #ffcccc;
+  }
+
+  /* 입력 필드 스타일 */
+  input[type="number"] {
+    width: 60px;
+    padding: 5px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    text-align: center;
+  }
+
+  input[type="number"]:focus {
+    border-color: #007bff;
+    outline: none;
+  }
+
+  /* 엑셀 다운로드 버튼 */
+  .download-btn {
+    margin-top: 20px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: #28a745;
+    color: white;
+  }
+
+  .download-btn:hover {
+    background-color: #218838;
+  }
+
+  .save-btn, .download-btn {
+    display: inline-block;
+    margin: 10px auto;
+  }
 </style>
+
