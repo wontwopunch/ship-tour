@@ -5,6 +5,8 @@ const ExcelJS = require('exceljs');
 
 const validDate = (date) => date instanceof Date && !isNaN(date.getTime());
 
+const { ObjectId } = require('mongoose').Types;
+
 // 월별 현황
 router.get('/monthly', async (req, res) => {
   const { month } = req.query;
@@ -80,8 +82,6 @@ router.get('/monthly', async (req, res) => {
 });
 
 
-const { ObjectId } = require('mongoose').Types; // ObjectId 가져오기
-
 router.post('/monthly/update-block', async (req, res) => {
   const { updates } = req.body;
 
@@ -113,7 +113,7 @@ router.post('/monthly/update-block', async (req, res) => {
       };
 
       const result = await Reservation.updateOne(
-        { _id: ObjectId("675fc7cf3cd9be11fae5bd52"), "dailyBlocks.date": new Date(date) },
+        { _id: new ObjectId("675fc7cf3cd9be11fae5bd52"), "dailyBlocks.date": new Date(date) },
         {
           $set: {
             "dailyBlocks.$.departure.ecoBlock": sanitizedDeparture.ecoBlock,
@@ -130,7 +130,7 @@ router.post('/monthly/update-block', async (req, res) => {
       if (result.modifiedCount === 0 && result.upsertedCount === 0) {
         // 일치하는 블록이 없을 경우 새로 추가
         await Reservation.updateOne(
-          { _id: ObjectId("675fc7cf3cd9be11fae5bd52") },
+          { _id: new ObjectId("675fc7cf3cd9be11fae5bd52") },
           {
             $push: {
               dailyBlocks: {
