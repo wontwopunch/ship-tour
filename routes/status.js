@@ -70,10 +70,11 @@ router.post('/monthly/update-block', async (req, res) => {
   }
 
   try {
+    const updatedBlocks = [];
+
     for (const update of updates) {
       const { reservationId, date, departure = {}, arrival = {} } = update;
 
-      // 데이터 검증
       if (!reservationId || !date) {
         console.warn('Skipping update due to missing reservationId or date:', update);
         continue;
@@ -91,10 +92,9 @@ router.post('/monthly/update-block', async (req, res) => {
         firstBlock: Number(arrival.firstBlock) || 0,
       };
 
-      // MongoDB 조회 및 조건 처리
       const reservation = await Reservation.findById(reservationId);
       if (!reservation) {
-        console.warn(`Reservation not found with ID: ${reservationId}`);
+        console.warn(`Reservation not found for ID: ${reservationId}`);
         continue;
       }
 
@@ -103,11 +103,9 @@ router.post('/monthly/update-block', async (req, res) => {
       );
 
       if (blockIndex > -1) {
-        // 기존 블록 업데이트
         reservation.dailyBlocks[blockIndex].departure = sanitizedDeparture;
         reservation.dailyBlocks[blockIndex].arrival = sanitizedArrival;
       } else {
-        // 새로운 블록 추가
         reservation.dailyBlocks.push({
           date: new Date(date),
           departure: sanitizedDeparture,
@@ -116,14 +114,16 @@ router.post('/monthly/update-block', async (req, res) => {
       }
 
       await reservation.save();
+      updatedBlocks.push({ reservationId, date, departure: sanitizedDeparture, arrival: sanitizedArrival });
     }
 
-    res.json({ success: true, message: 'Block data updated successfully' });
+    res.json({ success: true, message: 'Block data updated successfully', updatedBlocks });
   } catch (error) {
     console.error('Error updating block data:', error.message);
-    res.status(500).json({ success: false, message: 'Error updating data: ' + error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
+
 
 
 // 엑셀 다운로드

@@ -89,22 +89,21 @@
   }
 
   function calculateRemainingSeats(row, type) {
-    const economyInput = row.querySelector(`[data-field="${type}.ecoBlock"]`);
-    const businessInput = row.querySelector(`[data-field="${type}.bizBlock"]`);
-    const firstInput = row.querySelector(`[data-field="${type}.firstBlock"]`);
+    const economyInput = parseInt(row.querySelector(`[data-field="${type}.ecoBlock"]`)?.innerText || 0, 10);
+    const businessInput = parseInt(row.querySelector(`[data-field="${type}.bizBlock"]`)?.innerText || 0, 10);
+    const firstInput = parseInt(row.querySelector(`[data-field="${type}.firstBlock"]`)?.innerText || 0, 10);
 
-    const economyReserved = row.querySelector(`[data-field="${type}.economy"]`);
-    const businessReserved = row.querySelector(`[data-field="${type}.business"]`);
-    const firstReserved = row.querySelector(`[data-field="${type}.first"]`);
+    const economyReserved = parseInt(row.querySelector(`[data-field="${type}.economy"]`)?.innerText || 0, 10);
+    const businessReserved = parseInt(row.querySelector(`[data-field="${type}.business"]`)?.innerText || 0, 10);
+    const firstReserved = parseInt(row.querySelector(`[data-field="${type}.first"]`)?.innerText || 0, 10);
 
     const remainingEco = row.querySelector(`[data-field="${type}.remainingEco"]`);
     const remainingBiz = row.querySelector(`[data-field="${type}.remainingBiz"]`);
     const remainingFirst = row.querySelector(`[data-field="${type}.remainingFirst"]`);
 
-    // 값 계산 및 갱신
-    remainingEco.innerText = parseInt(economyInput.innerText || 0, 10) - parseInt(economyReserved.innerText || 0, 10);
-    remainingBiz.innerText = parseInt(businessInput.innerText || 0, 10) - parseInt(businessReserved.innerText || 0, 10);
-    remainingFirst.innerText = parseInt(firstInput.innerText || 0, 10) - parseInt(firstReserved.innerText || 0, 10);
+    if (remainingEco) remainingEco.innerText = economyInput - economyReserved;
+    if (remainingBiz) remainingBiz.innerText = businessInput - businessReserved;
+    if (remainingFirst) remainingFirst.innerText = firstInput - firstReserved;
   }
 
 
@@ -152,52 +151,35 @@
     const rows = document.querySelectorAll('tbody tr');
     const updates = Array.from(rows).map((row) => {
       const date = row.querySelector('td:first-child')?.innerText.trim();
-      if (!date) return null;
-
-      const departureEcoBlock = parseInt(row.querySelector('[data-field="departure.ecoBlock"]')?.innerText || 0, 10);
-      const departureBizBlock = parseInt(row.querySelector('[data-field="departure.bizBlock"]')?.innerText || 0, 10);
-      const departureFirstBlock = parseInt(row.querySelector('[data-field="departure.firstBlock"]')?.innerText || 0, 10);
-
-      const arrivalEcoBlock = parseInt(row.querySelector('[data-field="arrival.ecoBlock"]')?.innerText || 0, 10);
-      const arrivalBizBlock = parseInt(row.querySelector('[data-field="arrival.bizBlock"]')?.innerText || 0, 10);
-      const arrivalFirstBlock = parseInt(row.querySelector('[data-field="arrival.firstBlock"]')?.innerText || 0, 10);
-
-      // totalPrice와 deposit 값을 가져옴
-      const totalPrice = parseInt(row.querySelector('[data-field="totalPrice"]')?.innerText || 0, 10);
-      const deposit = parseInt(row.querySelector('[data-field="deposit"]')?.innerText || 0, 10);
+      const reservationId = row.getAttribute('data-reservation-id'); // Reservation ID
+      if (!date || !reservationId) return null;
 
       return {
+        reservationId,
         date,
         departure: {
-          ecoBlock: isNaN(departureEcoBlock) ? 0 : departureEcoBlock,
-          bizBlock: isNaN(departureBizBlock) ? 0 : departureBizBlock,
-          firstBlock: isNaN(departureFirstBlock) ? 0 : departureFirstBlock,
+          ecoBlock: parseInt(row.querySelector('[data-field="departure.ecoBlock"]')?.innerText || 0, 10),
+          bizBlock: parseInt(row.querySelector('[data-field="departure.bizBlock"]')?.innerText || 0, 10),
+          firstBlock: parseInt(row.querySelector('[data-field="departure.firstBlock"]')?.innerText || 0, 10),
         },
         arrival: {
-          ecoBlock: isNaN(arrivalEcoBlock) ? 0 : arrivalEcoBlock,
-          bizBlock: isNaN(arrivalBizBlock) ? 0 : arrivalBizBlock,
-          firstBlock: isNaN(arrivalFirstBlock) ? 0 : arrivalFirstBlock,
+          ecoBlock: parseInt(row.querySelector('[data-field="arrival.ecoBlock"]')?.innerText || 0, 10),
+          bizBlock: parseInt(row.querySelector('[data-field="arrival.bizBlock"]')?.innerText || 0, 10),
+          firstBlock: parseInt(row.querySelector('[data-field="arrival.firstBlock"]')?.innerText || 0, 10),
         },
-        totalPrice: isNaN(totalPrice) ? 0 : totalPrice,
-        deposit: isNaN(deposit) ? 0 : deposit,
       };
     }).filter(Boolean);
-
-    console.log('Payload for update:', updates);
 
     fetch('/status/monthly/update-block', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ updates }),
     })
-      .then((response) => {
-        if (!response.ok) throw new Error('Failed to update block data');
-        return response.json();
-      })
+      .then((response) => response.json())
       .then((data) => {
         if (data.success) {
           alert('블럭 데이터가 저장되었습니다.');
-          location.reload();
+          updateTable(data.updatedBlocks); // 테이블 갱신
         } else {
           alert('블럭 데이터 저장 중 오류가 발생했습니다.');
         }
@@ -206,6 +188,26 @@
         console.error('Error saving block data:', error);
       });
   }
+
+  function updateTable(updatedBlocks) {
+    updatedBlocks.forEach((block) => {
+      const row = document.querySelector(`tr[data-reservation-id="${block.reservationId}"]`);
+      if (!row) return;
+
+      row.querySelector('[data-field="departure.ecoBlock"]').innerText = block.departure.ecoBlock;
+      row.querySelector('[data-field="departure.bizBlock"]').innerText = block.departure.bizBlock;
+      row.querySelector('[data-field="departure.firstBlock"]').innerText = block.departure.firstBlock;
+
+      row.querySelector('[data-field="arrival.ecoBlock"]').innerText = block.arrival.ecoBlock;
+      row.querySelector('[data-field="arrival.bizBlock"]').innerText = block.arrival.bizBlock;
+      row.querySelector('[data-field="arrival.firstBlock"]').innerText = block.arrival.firstBlock;
+
+      calculateRemainingSeats(row, 'departure');
+      calculateRemainingSeats(row, 'arrival');
+    });
+  }
+
+
 
 
   function updateServer(row, field, value) {
