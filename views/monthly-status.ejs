@@ -46,7 +46,7 @@
       </thead>
       <tbody>
         <% data.forEach(row => { %>
-          <tr data-reservation-id="<%= row.reservationId %>">
+          <tr data-reservation-id="<%= row.reservationId || '' %>">
             <td>
               <%= row.date %>
               (<%= ['일', '월', '화', '수', '목', '금', '토'][new Date(row.date).getDay()] %>)
@@ -71,7 +71,7 @@
             <td data-field="arrival.remainingFirst"><%= (row.arrival.firstBlock || 0) - (row.arrival.first || 0) %></td>
           </tr>
         <% }) %>
-      </tbody>      
+      </tbody>           
     </table>
   </div>
   <button class="download-btn" onclick="downloadExcel()">엑셀 다운로드</button>
@@ -153,6 +153,7 @@
       const dateCell = row.querySelector('td:first-child');
       const reservationId = row.getAttribute('data-reservation-id');
 
+      // 유효성 검사
       if (!dateCell || !reservationId) {
         console.warn('Skipping row due to missing date or reservationId:', {
           date: dateCell?.innerText.trim(),
@@ -203,6 +204,7 @@
         alert('저장 중 오류가 발생했습니다. 콘솔을 확인하세요.');
       });
   }
+
 
   function updateServer(row, field, value) {
     const date = row.querySelector('td:first-child')?.innerText.trim();
