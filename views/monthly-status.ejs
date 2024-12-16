@@ -159,7 +159,6 @@
     const updates = Array.from(rows).map((row) => {
       const date = row.querySelector('td:first-child')?.innerText.trim();
       if (!date) return null;
-
       return {
         date,
         departure: {
@@ -175,20 +174,21 @@
       };
     }).filter(Boolean);
 
+    console.log('Updates payload:', updates);
+
     fetch('/status/monthly/update-block', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ updates }),
     })
-      .then((response) => {
-        if (!response.ok) throw new Error('Failed to update block data');
-        return response.json();
-      })
+      .then((response) => response.json())
       .then((data) => {
         if (data.success) {
+          console.log('Server response:', data);
           alert('블럭 데이터가 저장되었습니다.');
           location.reload();
         } else {
+          console.error('Server error:', data.message);
           alert('블럭 데이터 저장 중 오류가 발생했습니다.');
         }
       })
