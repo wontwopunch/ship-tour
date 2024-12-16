@@ -91,24 +91,24 @@ router.post('/monthly/update-block', async (req, res) => {
 
   try {
     for (const update of updates) {
-      const { date, departure, arrival } = update;
+      const { date, departure = {}, arrival = {} } = update;
 
       if (!date) {
         console.warn('Skipping update due to missing date:', update);
         continue;
       }
 
-      // 값 검증 및 기본값 설정
+      // 안전하게 데이터를 변환 및 검증
       const sanitizedDeparture = {
-        ecoBlock: Number(departure?.ecoBlock) >= 0 ? Number(departure?.ecoBlock) : 0,
-        bizBlock: Number(departure?.bizBlock) >= 0 ? Number(departure?.bizBlock) : 0,
-        firstBlock: Number(departure?.firstBlock) >= 0 ? Number(departure?.firstBlock) : 0,
+        ecoBlock: !isNaN(Number(departure.ecoBlock)) ? Number(departure.ecoBlock) : 0,
+        bizBlock: !isNaN(Number(departure.bizBlock)) ? Number(departure.bizBlock) : 0,
+        firstBlock: !isNaN(Number(departure.firstBlock)) ? Number(departure.firstBlock) : 0,
       };
 
       const sanitizedArrival = {
-        ecoBlock: Number(arrival?.ecoBlock) >= 0 ? Number(arrival?.ecoBlock) : 0,
-        bizBlock: Number(arrival?.bizBlock) >= 0 ? Number(arrival?.bizBlock) : 0,
-        firstBlock: Number(arrival?.firstBlock) >= 0 ? Number(arrival?.firstBlock) : 0,
+        ecoBlock: !isNaN(Number(arrival.ecoBlock)) ? Number(arrival.ecoBlock) : 0,
+        bizBlock: !isNaN(Number(arrival.bizBlock)) ? Number(arrival.bizBlock) : 0,
+        firstBlock: !isNaN(Number(arrival.firstBlock)) ? Number(arrival.firstBlock) : 0,
       };
 
       const result = await Reservation.updateOne(
@@ -135,8 +135,6 @@ router.post('/monthly/update-block', async (req, res) => {
     res.status(500).json({ success: false, message: 'Error updating data: ' + error.message });
   }
 });
-
-
 
 
 // 엑셀 다운로드
