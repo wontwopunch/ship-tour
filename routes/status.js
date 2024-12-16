@@ -79,7 +79,8 @@ router.get('/monthly', async (req, res) => {
   }
 });
 
-// 블록 데이터 업데이트
+
+// 블럭 데이터 업데이트
 router.post('/monthly/update-block', async (req, res) => {
   const { updates } = req.body;
 
@@ -96,19 +97,25 @@ router.post('/monthly/update-block', async (req, res) => {
         continue;
       }
 
-      const reservation = await Reservation.findOne({
+      // 날짜별로 예약 데이터를 검색
+      let reservation = await Reservation.findOne({
         $or: [{ departureDate: date }, { arrivalDate: date }],
       });
 
       if (!reservation) {
-        console.warn(`No reservation found for date: ${date}`);
-        continue;
+        // 예약 데이터가 없으면 새로 생성
+        reservation = new Reservation({
+          departureDate: date,
+          arrivalDate: date,
+          dailyBlocks: [],
+        });
       }
 
       if (!reservation.dailyBlocks) {
         reservation.dailyBlocks = [];
       }
 
+      // 기존 블럭 데이터 업데이트 또는 새로 추가
       const existingBlock = reservation.dailyBlocks.find(
         (block) => block.date.toISOString().split('T')[0] === date
       );
@@ -149,6 +156,7 @@ router.post('/monthly/update-block', async (req, res) => {
     res.status(500).json({ success: false, message: 'Error updating data: ' + error.message });
   }
 });
+
 
 // 엑셀 다운로드
 router.get('/monthly/export', async (req, res) => {

@@ -110,12 +110,13 @@
     remainingBiz.innerText = parseInt(businessInput.value || 0, 10) - parseInt(businessReserved.innerText || 0, 10);
     remainingFirst.innerText = parseInt(firstInput.value || 0, 10) - parseInt(firstReserved.innerText || 0, 10);
   }
-
+  
   function saveBlockData() {
     const rows = document.querySelectorAll('tbody tr');
     const updates = Array.from(rows).map((row) => {
       const date = row.querySelector('td:first-child')?.innerText.trim();
       if (!date) return null;
+
       return {
         date,
         departure: {
@@ -136,7 +137,10 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ updates }),
     })
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) throw new Error('Failed to update block data');
+        return response.json();
+      })
       .then((data) => {
         if (data.success) {
           alert('블럭 데이터가 저장되었습니다.');
