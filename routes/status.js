@@ -71,8 +71,8 @@ router.post('/monthly/update-block', async (req, res) => {
     for (const update of updates) {
       const { reservationId, date, departure = {}, arrival = {} } = update;
 
-      if (!reservationId || !date) {
-        console.warn('Skipping update due to missing reservationId or date:', update);
+      if (!date) {
+        console.warn('Skipping update due to missing date:', update);
         continue;
       }
 
@@ -88,29 +88,46 @@ router.post('/monthly/update-block', async (req, res) => {
         firstBlock: Number(arrival.firstBlock) || 0,
       };
 
-      const reservation = await Reservation.findById(reservationId);
-      if (!reservation) {
-        console.warn(`Reservation not found for ID: ${reservationId}`);
-        continue;
-      }
+      if (reservationId) {
+        // 기존 예약 업데이트
+        const reservation = await Reservation.findById(reservationId);
+        if (!reservation) {
+          console.warn(`Reservation not found for ID: ${reservationId}`);
+          continue;
+        }
 
-      const blockIndex = reservation.dailyBlocks.findIndex(
-        (block) => block.date.toISOString().split('T')[0] === new Date(date).toISOString().split('T')[0]
-      );
+        const blockIndex = reservation.dailyBlocks.findIndex(
+          (block) => block.date.toISOString().split('T')[0] === new Date(date).toISOString().split('T')[0]
+        );
 
-      if (blockIndex > -1) {
-        reservation.dailyBlocks[blockIndex].departure = sanitizedDeparture;
-        reservation.dailyBlocks[blockIndex].arrival = sanitizedArrival;
+        if (blockIndex > -1) {
+          reservation.dailyBlocks[blockIndex].departure = sanitizedDeparture;
+          reservation.dailyBlocks[blockIndex].arrival = sanitizedArrival;
+        } else {
+          reservation.dailyBlocks.push({
+            date: new Date(date),
+            departure: sanitizedDeparture,
+            arrival: sanitizedArrival,
+          });
+        }
+
+        await reservation.save();
+        updatedBlocks.push({ reservationId, date, departure: sanitizedDeparture, arrival: sanitizedArrival });
       } else {
-        reservation.dailyBlocks.push({
-          date: new Date(date),
-          departure: sanitizedDeparture,
-          arrival: sanitizedArrival,
+        // 새 예약 생성
+        const newReservation = new Reservation({
+          dailyBlocks: [
+            {
+              date: new Date(date),
+              departure: sanitizedDeparture,
+              arrival: sanitizedArrival,
+            },
+          ],
         });
-      }
 
-      await reservation.save();
-      updatedBlocks.push({ reservationId, date, departure: sanitizedDeparture, arrival: sanitizedArrival });
+        await newReservation.save();
+        updatedBlocks.push({ reservationId: newReservation._id, date, departure: sanitizedDeparture, arrival: sanitizedArrival });
+      }
     }
 
     res.json({ success: true, message: 'Block data updated successfully', updatedBlocks });
@@ -119,6 +136,7 @@ router.post('/monthly/update-block', async (req, res) => {
     res.status(500).json({ success: false, message: 'Error updating data: ' + error.message });
   }
 });
+
 
 
 // 엑셀 다운로드

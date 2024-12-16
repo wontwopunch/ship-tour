@@ -150,18 +150,16 @@
   function saveBlockData() {
     const rows = document.querySelectorAll('tbody tr');
     const updates = Array.from(rows).map((row) => {
-      const reservationId = row.getAttribute('data-id'); // 행에서 예약 ID 가져오기
-      const dateCell = row.querySelector('td:first-child');
-      const rawDate = dateCell?.innerText.trim();
-      const date = rawDate ? rawDate.split(' ')[0] : null; // "2024-12-16 (월)"에서 "2024-12-16" 추출
+      const reservationId = row.getAttribute('data-reservation-id') || null;
+      const date = row.querySelector('td:first-child')?.innerText.trim();
 
-      if (!reservationId || !date) {
-        console.warn('Skipping row due to missing date or reservationId:', { reservationId, date });
+      if (!date) {
+        console.warn('Skipping row due to missing date:', { date, reservationId });
         return null;
       }
 
       return {
-        reservationId,
+        reservationId, // reservationId가 없으면 null
         date,
         departure: {
           ecoBlock: parseInt(row.querySelector('[data-field="departure.ecoBlock"]')?.innerText || 0, 10),
@@ -174,10 +172,10 @@
           firstBlock: parseInt(row.querySelector('[data-field="arrival.firstBlock"]')?.innerText || 0, 10),
         },
       };
-    }).filter(Boolean); // 유효한 데이터만 필터링
+    }).filter(Boolean);
 
     if (updates.length === 0) {
-      console.warn('No updates to send. Make sure rows contain valid data.');
+      alert('유효한 데이터가 없습니다. 날짜를 확인하세요.');
       return;
     }
 
@@ -189,17 +187,16 @@
       .then((response) => response.json())
       .then((data) => {
         if (data.success) {
-          alert('블럭 데이터가 저장되었습니다.');
-          location.reload(); // 저장 후 페이지 새로고침
+          alert('데이터가 저장되었습니다.');
         } else {
-          alert('블럭 데이터 저장 중 오류가 발생했습니다.');
-          console.error(data.message);
+          alert('데이터 저장 중 오류가 발생했습니다.');
         }
       })
       .catch((error) => {
         console.error('Error saving block data:', error);
       });
   }
+
 
 
 
