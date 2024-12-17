@@ -242,62 +242,41 @@
     const newData = [];
 
     rows.forEach((row) => {
-      const id = row.getAttribute('data-id'); // 기존 데이터 ID
+      const id = row.getAttribute('data-id'); // 기존 데이터 ID 확인
       const rowData = {};
-      let isRowValid = true; // 행이 유효한지 확인
 
-      // 테이블의 모든 필드 가져오기
-      const headers = [
-        'ship', 'listStatus', 'contractDate', 'departureDate', 'arrivalDate',
-        'reservedBy', 'reservedBy2', 'contact', 'product', 'totalSeats',
-        'economySeats', 'businessSeats', 'firstSeats', 'dokdoTourDate',
-        'dokdoTourPeople', 'dokdoTourTime', 'dokdoTourDetails', 'totalPrice',
-        'deposit', 'balance', 'rentalCar', 'accommodation', 'others',
-        'departureFee', 'arrivalFee', 'dokdoFee', 'restaurantFee',
-        'eventFee', 'otherFee', 'refund', 'totalSettlement', 'profit',
-      ];
+      row.querySelectorAll('[data-field]').forEach((cell) => {
+        const fieldName = cell.getAttribute('data-field');
+        const inputElement = cell.querySelector('input, select');
+        let value = inputElement ? inputElement.value : cell.innerText.trim();
 
-      headers.forEach((fieldName) => {
-        const cell = row.querySelector(`[data-field="${fieldName}"]`);
-        let value = '';
+        // 숫자 필드 처리
+        const numericFields = [
+          'totalSeats', 'economySeats', 'businessSeats', 'firstSeats',
+          'totalPrice', 'deposit', 'balance', 'departureFee', 'arrivalFee',
+          'dokdoFee', 'restaurantFee', 'eventFee', 'otherFee', 'refund',
+          'totalSettlement', 'profit',
+        ];
 
-        if (cell) {
-          const inputElement = cell.querySelector('input, select');
-          value = inputElement ? inputElement.value : cell.innerText.trim();
-
-          // 숫자 필드 처리
-          const numericFields = [
-            'totalSeats', 'economySeats', 'businessSeats', 'firstSeats',
-            'totalPrice', 'deposit', 'balance', 'departureFee',
-            'arrivalFee', 'dokdoFee', 'restaurantFee', 'eventFee',
-            'otherFee', 'refund', 'totalSettlement', 'profit',
-          ];
-          if (numericFields.includes(fieldName)) {
-            value = parseFloat(value.replace(/,/g, '')) || 0;
-          }
+        if (numericFields.includes(fieldName)) {
+          value = parseFloat(value.replace(/,/g, '')) || 0;
         }
 
-        // 필수 필드 검증 (예: ship)
-        if (fieldName === 'ship' && (!value || value === 'undefined')) {
-          console.warn(`Invalid ship value detected: ${fieldName} in row`, row);
-          isRowValid = false; // 유효하지 않은 행
-        }
-
-        rowData[fieldName] = value; // 모든 필드 값 추가
+        rowData[fieldName] = value;
       });
 
-      if (isRowValid) {
-        if (row.dataset.isNew === 'true') {
-          newData.push(rowData); // 새 행 추가
-        } else if (id) {
-          rowData._id = id;
-          updatedData.push(rowData); // 기존 데이터 업데이트
-        }
+      // 필수 필드 기본값 설정
+      rowData.ship = rowData.ship || null; // ship이 선택되지 않으면 null
+      rowData.reservedBy = rowData.reservedBy || 'Unknown';
+      rowData.contractDate = rowData.contractDate || new Date().toISOString().split('T')[0];
+
+      if (id) {
+        rowData._id = id; // 기존 데이터 업데이트
+        updatedData.push(rowData);
+      } else {
+        newData.push(rowData); // 새 데이터 추가
       }
     });
-
-    console.log('Updated Data:', updatedData);
-    console.log('New Data:', newData);
 
     // 서버로 데이터 전송
     Promise.all([
@@ -327,6 +306,7 @@
   }
 
 
+
   function filterByMonth() {
     const month = document.getElementById('monthFilter').value;
     window.location.href = `/reservation/monthly?month=${month}`;
@@ -339,24 +319,30 @@
     // 새 행임을 표시
     newRow.dataset.isNew = 'true';
 
+    // 현재 날짜 기본값 설정
+    const today = new Date().toISOString().split('T')[0];
+
+    // ship 목록이 있는 경우, 첫 번째 항목을 기본값으로 설정
     const defaultShip = ships.length > 0 ? ships[0]._id : '';
     const shipOptions = ships.map(ship => `
       <option value="${ship._id}" ${ship._id === defaultShip ? 'selected' : ''}>${ship.name}</option>
     `).join('');
 
+    // 새 행 추가
     newRow.innerHTML = `
       <td>
         <select data-field="ship">
+          <option value="" disabled ${defaultShip ? '' : 'selected'}>선박 선택</option>
           ${shipOptions}
         </select>
       </td>
       <td contenteditable="true" data-field="listStatus"></td>
-      <td><input type="date" data-field="contractDate" value="${new Date().toISOString().split('T')[0]}"></td>
-      <td><input type="date" data-field="departureDate" value="${new Date().toISOString().split('T')[0]}"></td>
-      <td><input type="date" data-field="arrivalDate" value="${new Date().toISOString().split('T')[0]}"></td>
-      <td contenteditable="true" data-field="reservedBy"></td>
+      <td><input type="date" data-field="contractDate" value="${today}"></td>
+      <td><input type="date" data-field="departureDate" value="${today}"></td>
+      <td><input type="date" data-field="arrivalDate" value="${today}"></td>
+      <td contenteditable="true" data-field="reservedBy">Unknown</td>
       <td contenteditable="true" data-field="reservedBy2"></td>
-      <td contenteditable="true" data-field="contact"></td>
+      <td contenteditable="true" data-field="contact">Unknown</td>
       <td contenteditable="true" data-field="product"></td>
       <td contenteditable="true" data-field="totalSeats">0</td>
       <td contenteditable="true" data-field="economySeats">0</td>
@@ -384,7 +370,6 @@
       <td><button onclick="deleteRow(null)">삭제</button></td>
     `;
   }
-
 
 
   function deleteRow(id) {

@@ -42,25 +42,14 @@ router.get('/monthly', async (req, res) => {
 
 router.post('/add-bulk', async (req, res) => {
   try {
-    console.log('Received new data for bulk addition:', req.body);
-
-    // 필드 검증 및 매핑
     const newReservations = req.body.map((reservation) => {
-      const departureDate = new Date(reservation.departureDate);
-      const contractDate = new Date(reservation.contractDate);
-      const arrivalDate = new Date(reservation.arrivalDate);
-      const dokdoTourDate = reservation.dokdoTourDate ? new Date(reservation.dokdoTourDate) : null;
-
-      if (!reservation.ship || reservation.ship === '') {
-        throw new Error(`Invalid ship value for reservation: ${reservation}`);
-      }
-
+      const defaultDate = new Date();
       return {
-        ship: reservation.ship, // ObjectId 확인
+        ship: reservation.ship || null, // 필수 필드 기본값 설정
         listStatus: reservation.listStatus || '',
-        contractDate: isValidDate(contractDate) ? contractDate : new Date(),
-        departureDate: isValidDate(departureDate) ? departureDate : new Date(),
-        arrivalDate: isValidDate(arrivalDate) ? arrivalDate : new Date(),
+        contractDate: isValidDate(new Date(reservation.contractDate)) ? new Date(reservation.contractDate) : defaultDate,
+        departureDate: isValidDate(new Date(reservation.departureDate)) ? new Date(reservation.departureDate) : defaultDate,
+        arrivalDate: isValidDate(new Date(reservation.arrivalDate)) ? new Date(reservation.arrivalDate) : defaultDate,
         reservedBy: reservation.reservedBy || 'Unknown',
         reservedBy2: reservation.reservedBy2 || '',
         contact: reservation.contact || 'Unknown',
@@ -69,7 +58,7 @@ router.post('/add-bulk', async (req, res) => {
         economySeats: reservation.economySeats || 0,
         businessSeats: reservation.businessSeats || 0,
         firstSeats: reservation.firstSeats || 0,
-        dokdoTourDate: isValidDate(dokdoTourDate) ? dokdoTourDate : null,
+        dokdoTourDate: isValidDate(new Date(reservation.dokdoTourDate)) ? new Date(reservation.dokdoTourDate) : null,
         dokdoTourPeople: reservation.dokdoTourPeople || 0,
         dokdoTourTime: reservation.dokdoTourTime || '',
         dokdoTourDetails: reservation.dokdoTourDetails || '',
@@ -91,9 +80,7 @@ router.post('/add-bulk', async (req, res) => {
       };
     });
 
-    // 데이터 삽입
     const savedReservations = await Reservation.insertMany(newReservations);
-    console.log('Successfully added reservations:', savedReservations);
     res.json({ success: true, data: savedReservations });
   } catch (error) {
     console.error('Error during bulk addition:', error.message);
