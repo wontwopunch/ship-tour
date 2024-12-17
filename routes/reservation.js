@@ -40,41 +40,48 @@ router.get('/monthly', async (req, res) => {
 });
 
 
-
 router.post('/add-bulk', async (req, res) => {
   try {
-    console.log('Received Data:', req.body); // 수신된 데이터 확인
+    console.log('Received request body:', req.body); // 전체 데이터 출력
 
     if (!req.body || !Array.isArray(req.body)) {
-      throw new Error('Invalid data format. Expected an array.');
+      console.error('Invalid data format. Data must be an array.');
+      return res.status(400).json({ success: false, message: 'Invalid data format. Data must be an array.' });
     }
 
-    const newReservations = req.body.map((reservation) => {
-      console.log('Processing Row:', reservation); // 각 행 출력
+    const newReservations = req.body.map((reservation, index) => {
+      console.log(`Processing reservation #${index}:`, reservation);
+
       if (!reservation.ship) {
-        throw new Error('Ship field is required for all rows.');
+        console.error(`Reservation #${index} missing 'ship' field`);
+        throw new Error(`Reservation #${index}: 'ship' field is required.`);
       }
 
+      // 날짜 검증 및 처리
       const departureDate = new Date(reservation.departureDate);
       const contractDate = new Date(reservation.contractDate);
       const arrivalDate = new Date(reservation.arrivalDate);
 
       return {
         ...reservation,
-        ship: mongoose.Types.ObjectId(reservation.ship), // ObjectId로 변환
+        ship: mongoose.Types.ObjectId(reservation.ship), // ship 필드를 ObjectId로 변환
         contractDate: isValidDate(contractDate) ? contractDate : new Date(),
         departureDate: isValidDate(departureDate) ? departureDate : new Date(),
         arrivalDate: isValidDate(arrivalDate) ? arrivalDate : new Date(),
       };
     });
 
-    const savedReservations = await Reservation.insertMany(newReservations);
+    console.log('New Reservations to save:', newReservations); // 최종 저장할 데이터 출력
+
+    const savedReservations = await Reservation.insertMany(newReservations, { ordered: false });
+    console.log('Successfully saved reservations:', savedReservations);
     res.json({ success: true, data: savedReservations });
   } catch (error) {
-    console.error('Error during bulk addition:', error.message); // 오류 출력
+    console.error('Error during bulk addition:', error.message, error.stack); // 전체 오류 출력
     res.status(500).json({ success: false, message: error.message });
   }
 });
+
 
 // 예약 데이터 일괄 업데이트
 router.post('/bulk-update', async (req, res) => {
