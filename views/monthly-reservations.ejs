@@ -319,10 +319,12 @@
 
     const shipOptions = ships.map(ship => `<option value="${ship._id}">${ship.name}</option>`).join('');
 
+    // 첫 번째 선박이 기본값으로 선택됨
+    const defaultShip = ships.length > 0 ? ships[0]._id : '';
+
     newRow.innerHTML = `
       <td>
         <select data-field="ship">
-          <option value="" disabled selected>선박 선택</option>
           ${shipOptions}
         </select>
       </td>
@@ -359,7 +361,11 @@
       <td contenteditable="true" data-field="profit">0</td>
       <td><button onclick="deleteRow(null)">삭제</button></td>
     `;
+
+    // ship 필드에 첫 번째 선박 자동 설정
+    newRow.querySelector('[data-field="ship"]').value = defaultShip;
   }
+
 
   function deleteRow(id) {
     if (!confirm('이 행을 삭제하시겠습니까?')) return;

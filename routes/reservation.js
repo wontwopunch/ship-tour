@@ -44,32 +44,30 @@ router.get('/monthly', async (req, res) => {
 // 새 예약 데이터 일괄 삽입
 router.post('/add-bulk', async (req, res) => {
   try {
-    const newReservations = req.body.map((reservation) => {
+    const validReservations = req.body.filter(reservation => reservation.ship);
+
+    const newReservations = validReservations.map((reservation) => {
       const departureDate = new Date(reservation.departureDate);
       const contractDate = new Date(reservation.contractDate);
       const arrivalDate = new Date(reservation.arrivalDate);
 
       return {
         ...reservation,
-        ship: reservation.ship || null,
+        ship: reservation.ship,
         contractDate: isValidDate(contractDate) ? contractDate : new Date(),
         departureDate: isValidDate(departureDate) ? departureDate : new Date(),
         arrivalDate: isValidDate(arrivalDate) ? arrivalDate : new Date(),
-        reservedBy: reservation.reservedBy || 'Unknown',
-        contact: reservation.contact || 'Unknown',
-        listStatus: reservation.listStatus || '',
       };
     });
 
     const savedReservations = await Reservation.insertMany(newReservations, { ordered: false });
     res.json({ success: true, data: savedReservations });
   } catch (error) {
-    console.error('Error during bulk addition:', error);
+    console.error('Error during bulk addition:', error.message);
     res.status(500).json({ success: false, message: 'Bulk addition failed.' });
   }
 });
 
-// 예약 데이터 일괄 업데이트
 // 예약 데이터 일괄 업데이트
 router.post('/bulk-update', async (req, res) => {
   try {
