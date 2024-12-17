@@ -70,36 +70,62 @@ router.post('/add-bulk', async (req, res) => {
 });
 
 // 예약 데이터 일괄 업데이트
+// 예약 데이터 일괄 업데이트
 router.post('/bulk-update', async (req, res) => {
   try {
     const updates = req.body;
 
+    console.log("Received Updates:", updates); // 데이터 확인용 로그 추가
+
+    // 업데이트 데이터 검증 및 처리
     for (const update of updates) {
       const { _id, ship, ...fieldsToUpdate } = update;
 
-      // ship 값 검증
-      if (ship && ship !== 'undefined') {
-        const validShip = await Ship.findById(ship);
-        if (validShip) {
-          fieldsToUpdate.ship = validShip._id;
-        } else {
-          console.warn(`Invalid ship ID for reservation ${_id}`);
-          fieldsToUpdate.ship = null; // ship ID가 유효하지 않으면 null 처리
-        }
+      // _id가 없으면 무시
+      if (!_id) {
+        console.warn("Skipping update due to missing _id");
+        continue;
       }
 
-      console.log(`Updating reservation ID: ${_id} with fields:`, fieldsToUpdate);
+      // ship 값이 유효하지 않으면 무시
+      if (!ship || ship === 'undefined') {
+        console.warn(`Skipping update for ID ${_id} due to invalid ship value`);
+        continue;
+      }
 
-      // MongoDB 업데이트 실행
-      await Reservation.findByIdAndUpdate(_id, { $set: fieldsToUpdate }, { new: true });
+      // 필수 필드 검증
+      if (!fieldsToUpdate.departureDate || !fieldsToUpdate.arrivalDate) {
+        console.warn(`Skipping update for ID ${_id} due to missing dates`);
+        continue;
+      }
+
+      // 총 정산비 계산식 적용
+      const departureFee = fieldsToUpdate.departureFee || 0;
+      const arrivalFee = fieldsToUpdate.arrivalFee || 0;
+      const dokdoFee = fieldsToUpdate.dokdoFee || 0;
+      const restaurantFee = fieldsToUpdate.restaurantFee || 0;
+      const eventFee = fieldsToUpdate.eventFee || 0;
+      const otherFee = fieldsToUpdate.otherFee || 0;
+      const refund = fieldsToUpdate.refund || 0;
+
+      fieldsToUpdate.totalSettlement =
+        departureFee + arrivalFee + dokdoFee + restaurantFee + eventFee + otherFee - refund;
+
+      // 데이터베이스 업데이트 수행
+      await Reservation.findByIdAndUpdate(
+        _id,
+        { $set: { ship: ship, ...fieldsToUpdate } }, // ship 필드 포함
+        { new: true }
+      );
     }
 
     res.json({ success: true, message: 'Reservations updated successfully.' });
   } catch (error) {
-    console.error('Bulk update error:', error); // 에러 상세 로그 출력
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Bulk update error:', error.message);
+    res.status(500).json({ success: false, message: 'Failed to update reservations.' });
   }
 });
+
 
 
 // 예약 데이터 추가
