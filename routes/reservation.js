@@ -12,10 +12,12 @@ router.get('/monthly', async (req, res) => {
   const currentMonth = parseInt(month, 10) || new Date().getMonth() + 1;
 
   try {
+    // 월의 시작일과 다음 달의 시작일
     const startDate = new Date(`2024-${String(currentMonth).padStart(2, '0')}-01`);
-    const endDate = new Date(`2024-${String(currentMonth).padStart(2, '0')}-01`);
+    const endDate = new Date(startDate);
     endDate.setMonth(endDate.getMonth() + 1); // 다음 달의 첫 날
 
+    // 예약 데이터와 선박 데이터 가져오기
     const [reservations, ships] = await Promise.all([
       Reservation.find({
         $or: [
@@ -28,19 +30,21 @@ router.get('/monthly', async (req, res) => {
       Ship.find(),
     ]);
 
+    // EJS에 변수 전달: 'data'로 예약 데이터를 전달
     res.render('monthly-reservations', {
-      reservations: reservations.map((reservation) => ({
+      data: reservations.map((reservation) => ({
         ...reservation.toObject(),
         ship: reservation.ship || null,
       })),
-      selectedMonth: currentMonth,
-      ships,
+      selectedMonth: currentMonth, // 선택된 월
+      ships, // 선박 목록
     });
   } catch (error) {
     console.error('Error fetching monthly reservations:', error.message);
     res.status(500).send('Error fetching reservations.');
   }
 });
+
 
 
 // 새 예약 데이터 일괄 삽입
