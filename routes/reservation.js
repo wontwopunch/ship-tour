@@ -41,9 +41,11 @@ router.get('/monthly', async (req, res) => {
 
 router.post('/add-bulk', async (req, res) => {
   try {
-    const validReservations = req.body.filter((reservation) => reservation.ship && reservation.ship !== 'undefined');
+    console.log("Received Data for Bulk Add:", req.body);
 
+    const validReservations = req.body.filter((reservation) => reservation.ship && reservation.ship !== 'undefined');
     if (validReservations.length === 0) {
+      console.warn("No valid reservations to add.");
       return res.status(400).json({ success: false, message: 'No valid reservations to add.' });
     }
 
@@ -54,7 +56,6 @@ router.post('/add-bulk', async (req, res) => {
 
       return {
         ...reservation,
-        ship: reservation.ship,
         contractDate: isValidDate(contractDate) ? contractDate : new Date(),
         departureDate: isValidDate(departureDate) ? departureDate : new Date(),
         arrivalDate: isValidDate(arrivalDate) ? arrivalDate : new Date(),
@@ -62,12 +63,14 @@ router.post('/add-bulk', async (req, res) => {
     });
 
     const savedReservations = await Reservation.insertMany(newReservations, { ordered: false });
+    console.log("Saved Reservations:", savedReservations);
     res.json({ success: true, data: savedReservations });
   } catch (error) {
     console.error('Error during bulk addition:', error.message);
-    res.status(500).json({ success: false, message: 'Bulk addition failed.' });
+    res.status(500).json({ success: false, message: 'Bulk addition failed.', error: error.message });
   }
 });
+
 
 
 // 예약 데이터 일괄 업데이트
