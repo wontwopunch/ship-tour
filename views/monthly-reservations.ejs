@@ -244,20 +244,16 @@
     rows.forEach((row) => {
       const id = row.getAttribute('data-id'); // 기존 데이터 ID
       const rowData = {};
-      let isRowValid = true; // 유효한 행인지 확인
+      let isRowValid = true;
 
       row.querySelectorAll('[data-field]').forEach((cell) => {
         const fieldName = cell.getAttribute('data-field');
         const inputElement = cell.querySelector('input, select');
         let value = inputElement ? inputElement.value : cell.innerText.trim();
 
-        // ship 필드 확인
-        if (fieldName === 'ship') {
-          if (!value || value === 'undefined') {
-            console.warn('Invalid ship value for new row:', row);
-            isRowValid = false;
-            return;
-          }
+        if (fieldName === 'ship' && (!value || value === 'undefined')) {
+          console.warn('Invalid ship value detected:', row);
+          isRowValid = false;
         }
 
         const numericFields = [
@@ -274,17 +270,14 @@
       });
 
       if (isRowValid) {
-        if (id) {
-          rowData._id = id; // 기존 데이터
+        if (row.dataset.isNew === 'true') {
+          newData.push(rowData); // 새 행 데이터 추가
+        } else if (id) {
+          rowData._id = id;
           updatedData.push(rowData);
-        } else {
-          newData.push(rowData); // 새 데이터
         }
       }
     });
-
-    console.log("Updated Data:", updatedData);
-    console.log("New Data:", newData);
 
     // 서버로 데이터 전송
     Promise.all([
@@ -314,7 +307,6 @@
   }
 
 
-
   function filterByMonth() {
     const month = document.getElementById('monthFilter').value;
     window.location.href = `/reservation/monthly?month=${month}`;
@@ -322,9 +314,11 @@
 
   function addRow() {
     const table = document.getElementById('reservationTable').getElementsByTagName('tbody')[0];
-    const newRow = table.insertRow(0);
+    const newRow = table.insertRow();
 
-    // 선박 목록에서 첫 번째 선박을 기본값으로 설정
+    // 새 행임을 표시
+    newRow.dataset.isNew = 'true';
+
     const defaultShip = ships.length > 0 ? ships[0]._id : '';
     const shipOptions = ships.map(ship => `
       <option value="${ship._id}" ${ship._id === defaultShip ? 'selected' : ''}>${ship.name}</option>
