@@ -244,40 +244,60 @@
     rows.forEach((row) => {
       const id = row.getAttribute('data-id'); // 기존 데이터 ID
       const rowData = {};
-      let isRowValid = true;
+      let isRowValid = true; // 행이 유효한지 확인
 
-      row.querySelectorAll('[data-field]').forEach((cell) => {
-        const fieldName = cell.getAttribute('data-field');
-        const inputElement = cell.querySelector('input, select');
-        let value = inputElement ? inputElement.value : cell.innerText.trim();
+      // 테이블의 모든 필드 가져오기
+      const headers = [
+        'ship', 'listStatus', 'contractDate', 'departureDate', 'arrivalDate',
+        'reservedBy', 'reservedBy2', 'contact', 'product', 'totalSeats',
+        'economySeats', 'businessSeats', 'firstSeats', 'dokdoTourDate',
+        'dokdoTourPeople', 'dokdoTourTime', 'dokdoTourDetails', 'totalPrice',
+        'deposit', 'balance', 'rentalCar', 'accommodation', 'others',
+        'departureFee', 'arrivalFee', 'dokdoFee', 'restaurantFee',
+        'eventFee', 'otherFee', 'refund', 'totalSettlement', 'profit',
+      ];
 
+      headers.forEach((fieldName) => {
+        const cell = row.querySelector(`[data-field="${fieldName}"]`);
+        let value = '';
+
+        if (cell) {
+          const inputElement = cell.querySelector('input, select');
+          value = inputElement ? inputElement.value : cell.innerText.trim();
+
+          // 숫자 필드 처리
+          const numericFields = [
+            'totalSeats', 'economySeats', 'businessSeats', 'firstSeats',
+            'totalPrice', 'deposit', 'balance', 'departureFee',
+            'arrivalFee', 'dokdoFee', 'restaurantFee', 'eventFee',
+            'otherFee', 'refund', 'totalSettlement', 'profit',
+          ];
+          if (numericFields.includes(fieldName)) {
+            value = parseFloat(value.replace(/,/g, '')) || 0;
+          }
+        }
+
+        // 필수 필드 검증 (예: ship)
         if (fieldName === 'ship' && (!value || value === 'undefined')) {
-          console.warn('Invalid ship value detected:', row);
-          isRowValid = false;
+          console.warn(`Invalid ship value detected: ${fieldName} in row`, row);
+          isRowValid = false; // 유효하지 않은 행
         }
 
-        const numericFields = [
-          'totalSeats', 'economySeats', 'businessSeats', 'firstSeats',
-          'totalPrice', 'deposit', 'balance', 'departureFee',
-          'arrivalFee', 'dokdoFee', 'restaurantFee', 'eventFee', 'otherFee',
-          'refund', 'totalSettlement', 'profit',
-        ];
-        if (numericFields.includes(fieldName)) {
-          value = parseFloat(value.replace(/,/g, '')) || 0;
-        }
-
-        rowData[fieldName] = value;
+        rowData[fieldName] = value; // 모든 필드 값 추가
       });
 
       if (isRowValid) {
         if (row.dataset.isNew === 'true') {
-          newData.push(rowData); // 새 행 데이터 추가
+          newData.push(rowData); // 새 행 추가
         } else if (id) {
           rowData._id = id;
-          updatedData.push(rowData);
+          updatedData.push(rowData); // 기존 데이터 업데이트
         }
       }
     });
+
+    console.log('Updated Data:', updatedData);
+    console.log('New Data:', newData);
 
     // 서버로 데이터 전송
     Promise.all([

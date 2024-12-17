@@ -42,17 +42,21 @@ router.get('/monthly', async (req, res) => {
 
 router.post('/add-bulk', async (req, res) => {
   try {
-    console.log('Received data for bulk addition:', req.body); // 데이터 로깅
+    console.log('Received new data for bulk addition:', req.body);
+
+    // 필드 검증 및 매핑
     const newReservations = req.body.map((reservation) => {
-      // 필수 날짜 필드 처리
       const departureDate = new Date(reservation.departureDate);
       const contractDate = new Date(reservation.contractDate);
       const arrivalDate = new Date(reservation.arrivalDate);
       const dokdoTourDate = reservation.dokdoTourDate ? new Date(reservation.dokdoTourDate) : null;
 
-      // 모든 필드를 명시적으로 매핑
+      if (!reservation.ship || reservation.ship === '') {
+        throw new Error(`Invalid ship value for reservation: ${reservation}`);
+      }
+
       return {
-        ship: reservation.ship || null,
+        ship: reservation.ship, // ObjectId 확인
         listStatus: reservation.listStatus || '',
         contractDate: isValidDate(contractDate) ? contractDate : new Date(),
         departureDate: isValidDate(departureDate) ? departureDate : new Date(),
@@ -84,18 +88,16 @@ router.post('/add-bulk', async (req, res) => {
         refund: reservation.refund || 0,
         totalSettlement: reservation.totalSettlement || 0,
         profit: reservation.profit || 0,
-        dailyBlocks: reservation.dailyBlocks || [], // 날짜별 블럭 좌석 정보
       };
     });
 
-    console.log('Mapped Reservations:', newReservations); // 변환된 데이터 확인
-
-    // 데이터베이스에 삽입
-    const savedReservations = await Reservation.insertMany(newReservations, { ordered: false });
+    // 데이터 삽입
+    const savedReservations = await Reservation.insertMany(newReservations);
+    console.log('Successfully added reservations:', savedReservations);
     res.json({ success: true, data: savedReservations });
   } catch (error) {
     console.error('Error during bulk addition:', error.message);
-    res.status(500).json({ success: false, message: 'Bulk addition failed.', error: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
