@@ -43,13 +43,14 @@ router.get('/monthly', async (req, res) => {
 
 router.post('/add-bulk', async (req, res) => {
   try {
-    console.log('Received Data:', req.body); // 데이터 확인
+    console.log('Received Data:', req.body); // 수신된 데이터 확인
+
     if (!req.body || !Array.isArray(req.body)) {
       throw new Error('Invalid data format. Expected an array.');
     }
 
     const newReservations = req.body.map((reservation) => {
-      console.log('Processing Row:', reservation); // 각 행 확인
+      console.log('Processing Row:', reservation); // 각 행 출력
       if (!reservation.ship) {
         throw new Error('Ship field is required for all rows.');
       }
@@ -60,6 +61,7 @@ router.post('/add-bulk', async (req, res) => {
 
       return {
         ...reservation,
+        ship: mongoose.Types.ObjectId(reservation.ship), // ObjectId로 변환
         contractDate: isValidDate(contractDate) ? contractDate : new Date(),
         departureDate: isValidDate(departureDate) ? departureDate : new Date(),
         arrivalDate: isValidDate(arrivalDate) ? arrivalDate : new Date(),
@@ -69,12 +71,10 @@ router.post('/add-bulk', async (req, res) => {
     const savedReservations = await Reservation.insertMany(newReservations);
     res.json({ success: true, data: savedReservations });
   } catch (error) {
-    console.error('Error during bulk addition:', error.message);
+    console.error('Error during bulk addition:', error.message); // 오류 출력
     res.status(500).json({ success: false, message: error.message });
   }
 });
-
-
 
 // 예약 데이터 일괄 업데이트
 router.post('/bulk-update', async (req, res) => {
