@@ -239,12 +239,10 @@
   function saveChanges() {
     const rows = document.querySelectorAll('#reservationTable tbody tr');
     const updatedData = [];
-    const newData = [];
 
     rows.forEach((row) => {
-      const id = row.getAttribute('data-id'); // 기존 데이터 ID 가져오기
+      const id = row.getAttribute('data-id');
       const rowData = {};
-      let isRowValid = true; // 유효한 데이터인지 확인
 
       row.querySelectorAll('[data-field]').forEach((cell) => {
         const fieldName = cell.getAttribute('data-field');
@@ -252,55 +250,45 @@
         let value = inputElement ? inputElement.value : cell.innerText.trim();
 
         if (fieldName === 'ship') {
-          if (!value || value === 'undefined') {
-            console.warn(`Ship value is invalid for row: ${row}`);
-            isRowValid = false; // 선박이 선택되지 않은 경우
-            return;
-          }
-        }
-
-        // 숫자 필드 처리
-        const numericFields = [
-          'totalSeats', 'economySeats', 'businessSeats', 'firstSeats',
-          'dokdoTourPeople', 'totalPrice', 'deposit', 'balance',
-          'departureFee', 'arrivalFee', 'dokdoFee', 'restaurantFee',
-          'eventFee', 'otherFee', 'refund', 'totalSettlement', 'profit'
-        ];
-        if (numericFields.includes(fieldName)) {
-          value = parseFloat(value.replace(/,/g, '')) || 0;
+          console.log(`Row ID: ${id}, Ship Value: ${value}`); // ship 값 확인 로그
         }
 
         rowData[fieldName] = value;
       });
 
-      if (isRowValid) {
-        if (id) {
-          rowData._id = id; // 기존 데이터의 ID
-          updatedData.push(rowData);
-        } else {
-          newData.push(rowData); // 신규 데이터
-        }
+      if (id) {
+        rowData._id = id;
+        updatedData.push(rowData);
       }
     });
 
-    console.log("Updated Data:", updatedData);
-    console.log("New Data:", newData);
+    console.log('Updated Data:', updatedData);
 
-    // 서버로 데이터 전송
     fetch('/reservation/bulk-update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updatedData),
     })
-      .then(() => {
-        alert('데이터가 성공적으로 저장되었습니다.');
-        location.reload();
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Server error: ${response.statusText}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data.success) {
+          alert('데이터가 성공적으로 저장되었습니다.');
+          location.reload();
+        } else {
+          alert(`저장 실패: ${data.message}`);
+        }
       })
       .catch((error) => {
         console.error('저장 중 오류:', error);
         alert('저장 중 오류가 발생했습니다.');
       });
   }
+
 
 
 

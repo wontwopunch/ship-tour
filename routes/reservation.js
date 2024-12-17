@@ -77,23 +77,27 @@ router.post('/bulk-update', async (req, res) => {
     for (const update of updates) {
       const { _id, ship, ...fieldsToUpdate } = update;
 
-      // ship 값 검증 (null이 아닌 경우만 업데이트)
+      // ship 값 검증
       if (ship && ship !== 'undefined') {
         const validShip = await Ship.findById(ship);
         if (validShip) {
-          fieldsToUpdate.ship = ship; // 유효한 ship만 업데이트
+          fieldsToUpdate.ship = validShip._id;
         } else {
           console.warn(`Invalid ship ID for reservation ${_id}`);
+          fieldsToUpdate.ship = null; // ship ID가 유효하지 않으면 null 처리
         }
       }
 
+      console.log(`Updating reservation ID: ${_id} with fields:`, fieldsToUpdate);
+
+      // MongoDB 업데이트 실행
       await Reservation.findByIdAndUpdate(_id, { $set: fieldsToUpdate }, { new: true });
     }
 
     res.json({ success: true, message: 'Reservations updated successfully.' });
   } catch (error) {
-    console.error('Bulk update error:', error.message);
-    res.status(500).json({ success: false, message: 'Failed to update reservations.' });
+    console.error('Bulk update error:', error); // 에러 상세 로그 출력
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
