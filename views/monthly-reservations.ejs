@@ -67,13 +67,16 @@
         </tr>
       </thead>
       <tbody>
-        <% reservations.forEach(reservation => { %>
-          <tr data-id="<%= reservation._id %>">
+        <% data.forEach(row => { %>
+          <tr>
+            <td><%= new Date(row.date).toLocaleDateString() %></td>
             <td>
-              <select data-field="ship">
-                <option value="" disabled <%= !reservation.ship ? 'selected' : '' %>>선박 선택</option>
+              <select data-field="ship" onchange="updateField('<%= row.reservationId %>', 'ship', this.value)">
+                <option value="" <%= !row.shipName ? 'selected' : '' %>>미지정</option>
                 <% ships.forEach(ship => { %>
-                  <option value="<%= ship._id %>" <%= reservation.ship && reservation.ship._id == ship._id ? 'selected' : '' %>><%= ship.name %></option>
+                  <option value="<%= ship._id %>" <%= row.shipName == ship.name ? 'selected' : '' %>>
+                    <%= ship.name %>
+                  </option>
                 <% }) %>
               </select>
             </td>
