@@ -242,31 +242,26 @@
     const newData = [];
 
     rows.forEach((row) => {
-      const id = row.getAttribute('data-id');
+      const id = row.getAttribute('data-id'); // 기존 데이터의 ID
       const rowData = {};
+      let isRowValid = true;
 
       row.querySelectorAll('[data-field]').forEach((cell) => {
         const fieldName = cell.getAttribute('data-field');
-        let value;
+        const inputElement = cell.querySelector('input, select');
+        let value = inputElement ? inputElement.value : cell.innerText.trim();
 
-        // 드롭다운(select)에서 값을 정확히 가져오기
+        // 필수 필드인 ship 값 검증
         if (fieldName === 'ship') {
-          const selectElement = cell.querySelector('select');
-          value = selectElement ? selectElement.value : null;
-        } 
-        // 일반 입력 필드 처리
-        else {
-          const inputElement = cell.querySelector('input');
-          value = inputElement ? inputElement.value : cell.innerText.trim();
+          if (!value || value === 'undefined') {
+            console.warn('Ship value is invalid or missing.');
+            isRowValid = false; // 유효하지 않은 데이터는 제외
+            return;
+          }
         }
 
-        // 숫자 필드 변환
-        const numericFields = [
-          'totalSeats', 'economySeats', 'businessSeats', 'firstSeats',
-          'dokdoTourPeople', 'totalPrice', 'deposit', 'balance',
-          'departureFee', 'arrivalFee', 'dokdoFee', 'restaurantFee',
-          'eventFee', 'otherFee', 'refund', 'totalSettlement', 'profit'
-        ];
+        // 숫자 필드 처리
+        const numericFields = ['totalSeats', 'economySeats', 'businessSeats', 'firstSeats', 'totalPrice', 'deposit', 'balance'];
         if (numericFields.includes(fieldName)) {
           value = parseFloat(value.replace(/,/g, '')) || 0;
         }
@@ -274,11 +269,13 @@
         rowData[fieldName] = value;
       });
 
-      if (id) {
-        rowData._id = id; // 기존 데이터의 ID
-        updatedData.push(rowData);
-      } else {
-        newData.push(rowData); // 신규 데이터
+      if (isRowValid) {
+        if (id) {
+          rowData._id = id; // 기존 데이터
+          updatedData.push(rowData);
+        } else {
+          newData.push(rowData); // 새로운 데이터
+        }
       }
     });
 
@@ -286,25 +283,32 @@
     console.log("New Data:", newData);
 
     // 서버로 데이터 전송
-    fetch('/reservation/bulk-update', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updatedData),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.success) {
-          alert('데이터가 성공적으로 저장되었습니다.');
-          location.reload();
-        } else {
-          alert(`저장 실패: ${data.message}`);
-        }
+    Promise.all([
+      updatedData.length > 0
+        ? fetch('/reservation/bulk-update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedData),
+          })
+        : Promise.resolve(),
+      newData.length > 0
+        ? fetch('/reservation/add-bulk', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newData),
+          })
+        : Promise.resolve(),
+    ])
+      .then(() => {
+        alert('데이터가 성공적으로 저장되었습니다.');
+        location.reload();
       })
       .catch((error) => {
         console.error('저장 중 오류:', error);
-        alert('저장 중 오류가 발생했습니다.');
+        alert('저장 중 오류가 발생했습니다. 다시 시도해 주세요.');
       });
   }
+
 
 
 
@@ -318,8 +322,6 @@
     const newRow = table.insertRow(0);
 
     const shipOptions = ships.map(ship => `<option value="${ship._id}">${ship.name}</option>`).join('');
-
-    // 첫 번째 선박이 기본값으로 선택됨
     const defaultShip = ships.length > 0 ? ships[0]._id : '';
 
     newRow.innerHTML = `
@@ -347,24 +349,13 @@
       <td contenteditable="true" data-field="totalPrice">0</td>
       <td contenteditable="true" data-field="deposit">0</td>
       <td contenteditable="true" data-field="balance">0</td>
-      <td contenteditable="true" data-field="rentalCar"></td>
-      <td contenteditable="true" data-field="accommodation"></td>
-      <td contenteditable="true" data-field="others"></td>
-      <td contenteditable="true" data-field="departureFee">0</td>
-      <td contenteditable="true" data-field="arrivalFee">0</td>
-      <td contenteditable="true" data-field="dokdoFee">0</td>
-      <td contenteditable="true" data-field="restaurantFee">0</td>
-      <td contenteditable="true" data-field="eventFee">0</td>
-      <td contenteditable="true" data-field="otherFee">0</td>
-      <td contenteditable="true" data-field="refund">0</td>
-      <td contenteditable="true" data-field="totalSettlement">0</td>
-      <td contenteditable="true" data-field="profit">0</td>
       <td><button onclick="deleteRow(null)">삭제</button></td>
     `;
 
-    // ship 필드에 첫 번째 선박 자동 설정
+    // 첫 번째 선박 자동 설정
     newRow.querySelector('[data-field="ship"]').value = defaultShip;
   }
+
 
 
   function deleteRow(id) {

@@ -39,12 +39,13 @@ router.get('/monthly', async (req, res) => {
   }
 });
 
-
-
-// 새 예약 데이터 일괄 삽입
 router.post('/add-bulk', async (req, res) => {
   try {
-    const validReservations = req.body.filter(reservation => reservation.ship);
+    const validReservations = req.body.filter((reservation) => reservation.ship && reservation.ship !== 'undefined');
+
+    if (validReservations.length === 0) {
+      return res.status(400).json({ success: false, message: 'No valid reservations to add.' });
+    }
 
     const newReservations = validReservations.map((reservation) => {
       const departureDate = new Date(reservation.departureDate);
@@ -67,6 +68,7 @@ router.post('/add-bulk', async (req, res) => {
     res.status(500).json({ success: false, message: 'Bulk addition failed.' });
   }
 });
+
 
 // 예약 데이터 일괄 업데이트
 router.post('/bulk-update', async (req, res) => {
