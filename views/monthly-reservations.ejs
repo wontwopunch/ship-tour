@@ -67,59 +67,59 @@
         </tr>
       </thead>
       <tbody>
-        <% data.forEach(row => { %>
-          <tr>
-            <td><%= new Date(row.date).toLocaleDateString() %></td>
-            <td>
-              <select data-field="ship" onchange="updateField('<%= row.reservationId %>', 'ship', this.value)">
-                <option value="" <%= !row.shipName ? 'selected' : '' %>>미지정</option>
-                <% ships.forEach(ship => { %>
-                  <option value="<%= ship._id %>" <%= row.shipName == ship.name ? 'selected' : '' %>>
-                    <%= ship.name %>
-                  </option>
-                <% }) %>
-              </select>
-            </td>
-              <td contenteditable="true" data-field="listStatus"><%= reservation.listStatus || '' %></td>
+        <% if (data && data.length > 0) { %>
+          <% data.forEach(row => { %>
+            <tr>
               <td>
-                <input type="date" value="<%= reservation.contractDate ? reservation.contractDate.toISOString().split('T')[0] : '' %>" data-field="contractDate">
+                <select data-field="ship" onchange="updateField('<%= row.reservationId %>', 'ship', this.value)">
+                  <option value="" <%= !row.shipName ? 'selected' : '' %>>미지정</option>
+                  <% ships.forEach(ship => { %>
+                    <option value="<%= ship._id %>" <%= row.shipName == ship.name ? 'selected' : '' %>>
+                      <%= ship.name %>
+                    </option>
+                  <% }) %>
+                </select>
+              </td>
+              <td contenteditable="true" data-field="listStatus"><%= row.listStatus || '' %></td>
+              <td>
+                <input type="date" value="<%= row.contractDate ? row.contractDate.toISOString().split('T')[0] : '' %>" data-field="contractDate">
               </td>
               <td>
-                <input type="date" value="<%= reservation.departureDate ? reservation.departureDate.toISOString().split('T')[0] : '' %>" data-field="departureDate">
+                <input type="date" value="<%= row.departureDate ? row.departureDate.toISOString().split('T')[0] : '' %>" data-field="departureDate">
               </td>
               <td>
-                <input type="date" value="<%= reservation.arrivalDate ? reservation.arrivalDate.toISOString().split('T')[0] : '' %>" data-field="arrivalDate">
+                <input type="date" value="<%= row.arrivalDate ? row.arrivalDate.toISOString().split('T')[0] : '' %>" data-field="arrivalDate">
               </td>
-              <td contenteditable="true" data-field="reservedBy"><%= reservation.reservedBy || '' %></td>
-              <td contenteditable="true" data-field="reservedBy2"><%= reservation.reservedBy2 || '' %></td>
-              <td contenteditable="true" data-field="contact"><%= reservation.contact || '' %></td>
-              <td contenteditable="true" data-field="product"><%= reservation.product || '' %></td>
-              <td contenteditable="true" data-field="totalSeats"><%= reservation.totalSeats || 0 %></td>
-              <td contenteditable="true" data-field="economySeats"><%= reservation.economySeats || 0 %></td>
-              <td contenteditable="true" data-field="businessSeats"><%= reservation.businessSeats || 0 %></td>
-              <td contenteditable="true" data-field="firstSeats"><%= reservation.firstSeats || 0 %></td>
+              <td contenteditable="true" data-field="reservedBy"><%= row.reservedBy || '' %></td>
+              <td contenteditable="true" data-field="reservedBy2"><%= row.reservedBy2 || '' %></td>
+              <td contenteditable="true" data-field="contact"><%= row.contact || '' %></td>
+              <td contenteditable="true" data-field="product"><%= row.product || '' %></td>
+              <td contenteditable="true" data-field="totalSeats"><%= row.totalSeats || 0 %></td>
+              <td contenteditable="true" data-field="economySeats"><%= row.economySeats || 0 %></td>
+              <td contenteditable="true" data-field="businessSeats"><%= row.businessSeats || 0 %></td>
+              <td contenteditable="true" data-field="firstSeats"><%= row.firstSeats || 0 %></td>
               <td>
-                <input type="date" value="<%= reservation.dokdoTourDate ? reservation.dokdoTourDate.toISOString().split('T')[0] : '' %>" data-field="dokdoTourDate">
+                <input type="date" value="<%= row.dokdoTourDate ? row.dokdoTourDate.toISOString().split('T')[0] : '' %>" data-field="dokdoTourDate">
               </td>
-              <td contenteditable="true" data-field="dokdoTourPeople"><%= reservation.dokdoTourPeople || 0 %></td>
-              <td contenteditable="true" data-field="dokdoTourTime"><%= reservation.dokdoTourTime || '' %></td>
-              <td contenteditable="true" data-field="dokdoTourDetails"><%= reservation.dokdoTourDetails || '' %></td>
-              <td contenteditable="true" data-field="totalPrice"><%= reservation.totalPrice || 0 %></td>
-              <td contenteditable="true" data-field="deposit"><%= reservation.deposit || 0 %></td>
-              <td contenteditable="true" data-field="balance"><%= reservation.balance || 0 %></td>
-              <td contenteditable="true" data-field="rentalCar"><%= reservation.rentalCar || '' %></td>
-              <td contenteditable="true" data-field="accommodation"><%= reservation.accommodation || '' %></td>
-              <td contenteditable="true" data-field="others"><%= reservation.others || '' %></td>
-              <td contenteditable="true" data-field="departureFee"><%= reservation.departureFee || 0 %></td>
-              <td contenteditable="true" data-field="arrivalFee"><%= reservation.arrivalFee || 0 %></td>
-              <td contenteditable="true" data-field="dokdoFee"><%= reservation.dokdoFee || 0 %></td>
-              <td contenteditable="true" data-field="restaurantFee"><%= reservation.restaurantFee || 0 %></td>
-              <td contenteditable="true" data-field="eventFee"><%= reservation.eventFee || 0 %></td>
-              <td contenteditable="true" data-field="otherFee"><%= reservation.otherFee || 0 %></td>
-              <td contenteditable="true" data-field="refund"><%= reservation.refund || 0 %></td>
-              <td contenteditable="true" data-field="totalSettlement"><%= reservation.totalSettlement || 0 %></td>
-              <td contenteditable="true" data-field="profit"><%= reservation.profit || 0 %></td>
-              <td><button onclick="deleteRow('<%= reservation._id %>')">삭제</button></td>
+              <td contenteditable="true" data-field="dokdoTourPeople"><%= row.dokdoTourPeople || 0 %></td>
+              <td contenteditable="true" data-field="dokdoTourTime"><%= row.dokdoTourTime || '' %></td>
+              <td contenteditable="true" data-field="dokdoTourDetails"><%= row.dokdoTourDetails || '' %></td>
+              <td contenteditable="true" data-field="totalPrice"><%= row.totalPrice || 0 %></td>
+              <td contenteditable="true" data-field="deposit"><%= row.deposit || 0 %></td>
+              <td contenteditable="true" data-field="balance"><%= row.balance || 0 %></td>
+              <td contenteditable="true" data-field="rentalCar"><%= row.rentalCar || '' %></td>
+              <td contenteditable="true" data-field="accommodation"><%= row.accommodation || '' %></td>
+              <td contenteditable="true" data-field="others"><%= row.others || '' %></td>
+              <td contenteditable="true" data-field="departureFee"><%= row.departureFee || 0 %></td>
+              <td contenteditable="true" data-field="arrivalFee"><%= row.arrivalFee || 0 %></td>
+              <td contenteditable="true" data-field="dokdoFee"><%= row.dokdoFee || 0 %></td>
+              <td contenteditable="true" data-field="restaurantFee"><%= row.restaurantFee || 0 %></td>
+              <td contenteditable="true" data-field="eventFee"><%= row.eventFee || 0 %></td>
+              <td contenteditable="true" data-field="otherFee"><%= row.otherFee || 0 %></td>
+              <td contenteditable="true" data-field="refund"><%= row.refund || 0 %></td>
+              <td contenteditable="true" data-field="totalSettlement"><%= row.totalSettlement || 0 %></td>
+              <td contenteditable="true" data-field="profit"><%= row.profit || 0 %></td>
+              <td><button onclick="deleteRow('<%= row._id %>')">삭제</button></td>
             </tr>
           <% }) %>
         <% } else { %>
@@ -127,7 +127,7 @@
             <td colspan="33">해당 월에 예약된 데이터가 없습니다.</td>
           </tr>
         <% } %>
-      </tbody>      
+      </tbody>         
     </table>
    </div>
   </div>
