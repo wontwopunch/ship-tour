@@ -42,26 +42,33 @@ router.get('/monthly', async (req, res) => {
 
 router.post('/add-bulk', async (req, res) => {
   try {
-    const validReservations = req.body.map((reservation) => {
-      // 필수 필드 유효성 검사
-      if (!reservation.ship || reservation.ship === 'undefined') {
-        console.warn(`Skipping reservation due to invalid ship: ${reservation.ship}`);
-        return null; // 유효하지 않은 항목 무시
-      }
+    const validReservations = req.body
+      .map((reservation, index) => {
+        try {
+          // 필수 필드 유효성 검사
+          if (!reservation.ship || reservation.ship === 'undefined') {
+            console.warn(`Skipping reservation at index ${index} due to invalid ship: ${reservation.ship}`);
+            return null;
+          }
 
-      // 날짜 필드 유효성 검사
-      const isValidDate = (date) => date && !isNaN(new Date(date));
-      const defaultDate = new Date();
+          // 날짜 필드 유효성 검사
+          const isValidDate = (date) => date && !isNaN(new Date(date));
+          const defaultDate = new Date();
 
-      return {
-        ship: reservation.ship,
-        contractDate: isValidDate(reservation.contractDate) ? new Date(reservation.contractDate) : defaultDate,
-        departureDate: isValidDate(reservation.departureDate) ? new Date(reservation.departureDate) : defaultDate,
-        arrivalDate: isValidDate(reservation.arrivalDate) ? new Date(reservation.arrivalDate) : defaultDate,
-        reservedBy: reservation.reservedBy || 'Unknown',
-        ...reservation,
-      };
-    }).filter(Boolean); // null 값 제거
+          return {
+            ship: reservation.ship,
+            contractDate: isValidDate(reservation.contractDate) ? new Date(reservation.contractDate) : defaultDate,
+            departureDate: isValidDate(reservation.departureDate) ? new Date(reservation.departureDate) : defaultDate,
+            arrivalDate: isValidDate(reservation.arrivalDate) ? new Date(reservation.arrivalDate) : defaultDate,
+            reservedBy: reservation.reservedBy || 'Unknown',
+            ...reservation,
+          };
+        } catch (err) {
+          console.error(`Error parsing reservation at index ${index}:`, err.message);
+          return null;
+        }
+      })
+      .filter(Boolean); // null 값 제거
 
     if (validReservations.length === 0) {
       throw new Error('No valid reservations to insert');
@@ -70,7 +77,7 @@ router.post('/add-bulk', async (req, res) => {
     const savedReservations = await Reservation.insertMany(validReservations);
     res.json({ success: true, data: savedReservations });
   } catch (error) {
-    console.error('Error during bulk addition:', error);
+    console.error('Error during bulk addition:', error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 });
