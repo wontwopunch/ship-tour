@@ -43,16 +43,26 @@ router.get('/monthly', async (req, res) => {
 
 router.post('/add-bulk', async (req, res) => {
   try {
+    console.log('Received Data:', req.body); // 데이터 확인
+    if (!req.body || !Array.isArray(req.body)) {
+      throw new Error('Invalid data format. Expected an array.');
+    }
+
     const newReservations = req.body.map((reservation) => {
+      console.log('Processing Row:', reservation); // 각 행 확인
       if (!reservation.ship) {
         throw new Error('Ship field is required for all rows.');
       }
 
+      const departureDate = new Date(reservation.departureDate);
+      const contractDate = new Date(reservation.contractDate);
+      const arrivalDate = new Date(reservation.arrivalDate);
+
       return {
         ...reservation,
-        contractDate: reservation.contractDate || new Date(),
-        departureDate: reservation.departureDate || new Date(),
-        arrivalDate: reservation.arrivalDate || new Date(),
+        contractDate: isValidDate(contractDate) ? contractDate : new Date(),
+        departureDate: isValidDate(departureDate) ? departureDate : new Date(),
+        arrivalDate: isValidDate(arrivalDate) ? arrivalDate : new Date(),
       };
     });
 
