@@ -4,11 +4,7 @@ const Reservation = require('../models/Reservation');
 const Ship = require('../models/Ship');
 const ExcelJS = require('exceljs');
 
-// Helper function to validate dates
-function isValidDate(d) {
-  return d instanceof Date && !isNaN(d);
-}
-
+const isValidDate = (date) => date instanceof Date && !isNaN(date);
 
 // 월별 예약 데이터 조회
 router.get('/monthly', async (req, res) => {
@@ -16,23 +12,22 @@ router.get('/monthly', async (req, res) => {
   const currentMonth = parseInt(month, 10) || new Date().getMonth() + 1;
 
   try {
-    const startDate = new Date(`2024-${currentMonth}-01`);
-    const endDate = new Date(`2024-${currentMonth}-31`);
+    const startDate = new Date(`2024-${String(currentMonth).padStart(2, '0')}-01`);
+    const endDate = new Date(`2024-${String(currentMonth).padStart(2, '0')}-01`);
+    endDate.setMonth(endDate.getMonth() + 1); // 다음 달의 첫 날
 
     const [reservations, ships] = await Promise.all([
-      Reservation.find({ departureDate: { $gte: startDate, $lt: endDate } })
-        .populate({
-          path: 'ship',
-          select: '_id name', // 필요한 필드만 가져오기
-        })
+      Reservation.find({
+        $or: [
+          { departureDate: { $gte: startDate, $lt: endDate } },
+          { arrivalDate: { $gte: startDate, $lt: endDate } },
+        ],
+      })
+        .populate({ path: 'ship', select: '_id name' })
         .sort({ departureDate: 1, arrivalDate: 1 }),
       Ship.find(),
     ]);
 
-    console.log('Reservations fetched:', reservations);
-    console.log('Ships fetched:', ships);
-
-    // reservations와 ships가 비어있는 경우를 대비
     res.render('monthly-reservations', {
       reservations: reservations.map((reservation) => ({
         ...reservation.toObject(),
@@ -42,12 +37,10 @@ router.get('/monthly', async (req, res) => {
       ships,
     });
   } catch (error) {
-    console.error('Error fetching monthly reservations:', error);
+    console.error('Error fetching monthly reservations:', error.message);
     res.status(500).send('Error fetching reservations.');
   }
 });
-
-
 
 
 // 새 예약 데이터 일괄 삽입

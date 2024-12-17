@@ -67,21 +67,26 @@
         </tr>
       </thead>
       <tbody>
-        <% if (reservations && reservations.length > 0) { %>
-          <% reservations.forEach(reservation => { %>
-            <tr data-id="<%= reservation._id %>">
-              <td>
-                <select data-field="ship">
-                  <option value="" disabled <%= !reservation.ship ? 'selected' : '' %>>선박 선택</option>
-                  <% ships.forEach(ship => { %>
-                    <option value="<%= ship._id %>" <%= reservation.ship && reservation.ship._id == ship._id ? 'selected' : '' %>><%= ship.name %></option>
-                  <% }) %>
-                </select>
-              </td>
+        <% reservations.forEach(reservation => { %>
+          <tr data-id="<%= reservation._id %>">
+            <td>
+              <select data-field="ship">
+                <option value="" disabled <%= !reservation.ship ? 'selected' : '' %>>선박 선택</option>
+                <% ships.forEach(ship => { %>
+                  <option value="<%= ship._id %>" <%= reservation.ship && reservation.ship._id == ship._id ? 'selected' : '' %>><%= ship.name %></option>
+                <% }) %>
+              </select>
+            </td>
               <td contenteditable="true" data-field="listStatus"><%= reservation.listStatus || '' %></td>
-              <td><input type="date" value="<%= reservation.contractDate ? reservation.contractDate.toISOString().split('T')[0] : '' %>" data-field="contractDate"></td>
-              <td><input type="date" value="<%= reservation.departureDate ? reservation.departureDate.toISOString().split('T')[0] : '' %>" data-field="departureDate"></td>
-              <td><input type="date" value="<%= reservation.arrivalDate ? reservation.arrivalDate.toISOString().split('T')[0] : '' %>" data-field="arrivalDate"></td>
+              <td>
+                <input type="date" value="<%= reservation.contractDate ? reservation.contractDate.toISOString().split('T')[0] : '' %>" data-field="contractDate">
+              </td>
+              <td>
+                <input type="date" value="<%= reservation.departureDate ? reservation.departureDate.toISOString().split('T')[0] : '' %>" data-field="departureDate">
+              </td>
+              <td>
+                <input type="date" value="<%= reservation.arrivalDate ? reservation.arrivalDate.toISOString().split('T')[0] : '' %>" data-field="arrivalDate">
+              </td>
               <td contenteditable="true" data-field="reservedBy"><%= reservation.reservedBy || '' %></td>
               <td contenteditable="true" data-field="reservedBy2"><%= reservation.reservedBy2 || '' %></td>
               <td contenteditable="true" data-field="contact"><%= reservation.contact || '' %></td>
@@ -90,7 +95,9 @@
               <td contenteditable="true" data-field="economySeats"><%= reservation.economySeats || 0 %></td>
               <td contenteditable="true" data-field="businessSeats"><%= reservation.businessSeats || 0 %></td>
               <td contenteditable="true" data-field="firstSeats"><%= reservation.firstSeats || 0 %></td>
-              <td><input type="date" value="<%= reservation.dokdoTourDate ? reservation.dokdoTourDate.toISOString().split('T')[0] : '' %>" data-field="dokdoTourDate"></td>
+              <td>
+                <input type="date" value="<%= reservation.dokdoTourDate ? reservation.dokdoTourDate.toISOString().split('T')[0] : '' %>" data-field="dokdoTourDate">
+              </td>
               <td contenteditable="true" data-field="dokdoTourPeople"><%= reservation.dokdoTourPeople || 0 %></td>
               <td contenteditable="true" data-field="dokdoTourTime"><%= reservation.dokdoTourTime || '' %></td>
               <td contenteditable="true" data-field="dokdoTourDetails"><%= reservation.dokdoTourDetails || '' %></td>
@@ -117,7 +124,7 @@
             <td colspan="33">해당 월에 예약된 데이터가 없습니다.</td>
           </tr>
         <% } %>
-      </tbody>
+      </tbody>      
     </table>
    </div>
   </div>
