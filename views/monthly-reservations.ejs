@@ -242,29 +242,19 @@
     const newData = [];
 
     rows.forEach((row) => {
-      const id = row.getAttribute('data-id'); // 데이터 ID 가져오기
-      if (!id && !row.dataset.isNew) return; // ID가 없고 신규 데이터도 아니면 무시
-
+      const id = row.getAttribute('data-id'); // 기존 데이터 ID 가져오기
       const rowData = {};
-      const headers = [
-        'ship', 'listStatus', 'contractDate', 'departureDate', 'arrivalDate',
-        'reservedBy', 'reservedBy2', 'contact', 'product', 'totalSeats',
-        'economySeats', 'businessSeats', 'firstSeats', 'dokdoTourDate',
-        'dokdoTourPeople', 'dokdoTourTime', 'dokdoTourDetails', 'totalPrice',
-        'deposit', 'balance', 'rentalCar', 'accommodation', 'others',
-        'departureFee', 'arrivalFee', 'dokdoFee', 'restaurantFee',
-        'eventFee', 'otherFee', 'refund', 'totalSettlement', 'profit'
-      ];
-
-      // 각 셀에서 데이터 추출
       row.querySelectorAll('[data-field]').forEach((cell) => {
         const fieldName = cell.getAttribute('data-field');
-        if (!fieldName) return;
-
         const inputElement = cell.querySelector('input, select');
         let value = inputElement ? inputElement.value : cell.innerText.trim();
 
-        // 숫자 필드는 숫자로 변환
+        // 선박(ship) 값 처리: 빈 값일 경우 undefined로 설정
+        if (fieldName === 'ship' && (!value || value === '')) {
+          value = undefined;
+        }
+
+        // 숫자 필드 처리
         const numericFields = [
           'totalSeats', 'economySeats', 'businessSeats', 'firstSeats',
           'dokdoTourPeople', 'totalPrice', 'deposit', 'balance',
@@ -274,43 +264,36 @@
         if (numericFields.includes(fieldName)) {
           value = parseFloat(value.replace(/,/g, '')) || 0;
         }
-        rowData[fieldName] = value;
+
+        if (value !== undefined) {
+          rowData[fieldName] = value;
+        }
       });
 
       if (id) {
-        rowData._id = id; // 기존 데이터는 ID 포함
+        rowData._id = id; // 기존 데이터의 ID
         updatedData.push(rowData);
       } else {
-        newData.push(rowData); // 신규 데이터 저장
+        newData.push(rowData); // 신규 데이터
       }
     });
 
     // 서버로 데이터 전송
-    Promise.all([
-      updatedData.length > 0
-        ? fetch('/reservation/bulk-update', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updatedData),
-          })
-        : Promise.resolve(),
-      newData.length > 0
-        ? fetch('/reservation/add-bulk', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newData),
-          })
-        : Promise.resolve(),
-    ])
-      .then(([updateResponse, addResponse]) => {
+    fetch('/reservation/bulk-update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedData),
+    })
+      .then(() => {
         alert('데이터가 성공적으로 저장되었습니다.');
-        location.reload(); // 저장 후 페이지 새로고침
+        location.reload();
       })
       .catch((error) => {
-        console.error('저장 중 오류 발생:', error);
-        alert('저장 중 오류가 발생했습니다. 다시 시도해주세요.');
+        console.error('저장 중 오류:', error);
+        alert('저장 중 오류가 발생했습니다.');
       });
   }
+
 
 
   function filterByMonth() {

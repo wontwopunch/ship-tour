@@ -89,22 +89,25 @@ router.post('/bulk-update', async (req, res) => {
 
       return {
         ...reservation,
-        totalSettlement: departureFee + arrivalFee + dokdoFee + restaurantFee + eventFee + otherFee - refund, // 수정된 계산식
+        totalSettlement: departureFee + arrivalFee + dokdoFee + restaurantFee + eventFee + otherFee - refund, // 정산비 계산
       };
     });
 
     for (const update of updates) {
-      if (update._id) {
-        await Reservation.findByIdAndUpdate(update._id, update, { new: true });
-      } else {
-        await Reservation.create(update);
+      const { _id, ship, ...fieldsToUpdate } = update;
+
+      // ship 값 처리: 값이 undefined면 업데이트 제외
+      if (ship !== undefined) {
+        fieldsToUpdate.ship = ship;
       }
+
+      await Reservation.findByIdAndUpdate(_id, { $set: fieldsToUpdate }, { new: true });
     }
 
-    res.json({ success: true });
+    res.json({ success: true, message: 'Reservations updated successfully.' });
   } catch (error) {
-    console.error('Bulk update error:', error);
-    res.status(500).json({ success: false });
+    console.error('Bulk update error:', error.message);
+    res.status(500).json({ success: false, message: 'Failed to update reservations.' });
   }
 });
 
