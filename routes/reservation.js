@@ -42,17 +42,21 @@ router.get('/monthly', async (req, res) => {
 
 router.post('/add-bulk', async (req, res) => {
   try {
-    const newReservations = req.body.map((reservation) => ({
-      ship: reservation.ship || null,
-      contractDate: reservation.contractDate || new Date(),
-      departureDate: reservation.departureDate || new Date(),
-      arrivalDate: reservation.arrivalDate || new Date(),
-      reservedBy: reservation.reservedBy || 'Unknown',
-      ...reservation,
-    }));
+    const newReservations = req.body.map((reservation) => {
+      const ship = reservation.ship && reservation.ship !== 'undefined' ? reservation.ship : null;
+
+      return {
+        ship, // ship이 유효하지 않으면 null로 설정
+        contractDate: reservation.contractDate || new Date(),
+        departureDate: reservation.departureDate || new Date(),
+        arrivalDate: reservation.arrivalDate || new Date(),
+        reservedBy: reservation.reservedBy || 'Unknown',
+        ...reservation,
+      };
+    });
 
     const savedReservations = await Reservation.insertMany(newReservations);
-    res.json({ success: true, data: savedReservations }); // 추가된 예약 데이터 반환
+    res.json({ success: true, data: savedReservations }); // 성공적으로 추가된 데이터 반환
   } catch (error) {
     console.error('Error during bulk addition:', error.message);
     res.status(500).json({ success: false, message: error.message });
