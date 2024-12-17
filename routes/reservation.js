@@ -42,23 +42,35 @@ router.get('/monthly', async (req, res) => {
 
 router.post('/add-bulk', async (req, res) => {
   try {
-    const newReservations = req.body.map((reservation) => {
-      const ship = reservation.ship && reservation.ship !== 'undefined' ? reservation.ship : null;
+    const validReservations = req.body.map((reservation) => {
+      // 필수 필드 유효성 검사
+      if (!reservation.ship || reservation.ship === 'undefined') {
+        console.warn(`Skipping reservation due to invalid ship: ${reservation.ship}`);
+        return null; // 유효하지 않은 항목 무시
+      }
+
+      // 날짜 필드 유효성 검사
+      const isValidDate = (date) => date && !isNaN(new Date(date));
+      const defaultDate = new Date();
 
       return {
-        ship, // ship이 유효하지 않으면 null로 설정
-        contractDate: reservation.contractDate || new Date(),
-        departureDate: reservation.departureDate || new Date(),
-        arrivalDate: reservation.arrivalDate || new Date(),
+        ship: reservation.ship,
+        contractDate: isValidDate(reservation.contractDate) ? new Date(reservation.contractDate) : defaultDate,
+        departureDate: isValidDate(reservation.departureDate) ? new Date(reservation.departureDate) : defaultDate,
+        arrivalDate: isValidDate(reservation.arrivalDate) ? new Date(reservation.arrivalDate) : defaultDate,
         reservedBy: reservation.reservedBy || 'Unknown',
         ...reservation,
       };
-    });
+    }).filter(Boolean); // null 값 제거
 
-    const savedReservations = await Reservation.insertMany(newReservations);
-    res.json({ success: true, data: savedReservations }); // 성공적으로 추가된 데이터 반환
+    if (validReservations.length === 0) {
+      throw new Error('No valid reservations to insert');
+    }
+
+    const savedReservations = await Reservation.insertMany(validReservations);
+    res.json({ success: true, data: savedReservations });
   } catch (error) {
-    console.error('Error during bulk addition:', error.message);
+    console.error('Error during bulk addition:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });

@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const reservationSchema = new mongoose.Schema(
   {
     // 기본정보
-    ship: { type: mongoose.Schema.Types.ObjectId, ref: 'Ship' },
+    ship: { type: mongoose.Schema.Types.ObjectId, ref: 'Ship', required: false },
     listStatus: {
       type: String,
       default: '',
