@@ -69,7 +69,7 @@
       <tbody>
         <% if (data && data.length > 0) { %>
           <% data.forEach(row => { %>
-            <tr>
+            <tr data-id="<%= row._id %>">
               <td>
                 <select data-field="ship" onchange="updateField('<%= row._id %>', 'ship', this.value)">
                   <option value="" <%= !row.ship ? 'selected' : '' %>>미지정</option>
@@ -164,7 +164,7 @@
   }
 
   function updateField(id, field, value) {
-    if (!id) return; // id가 없으면 종료
+    if (!id) return; // ID가 없으면 종료
 
     fetch(`/reservation/update/${id}`, {
       method: 'POST',

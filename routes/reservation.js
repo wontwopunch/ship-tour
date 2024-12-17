@@ -12,36 +12,30 @@ router.get('/monthly', async (req, res) => {
   const currentMonth = parseInt(month, 10) || new Date().getMonth() + 1;
 
   try {
-    // 월의 시작일과 다음 달의 시작일
     const startDate = new Date(`2024-${String(currentMonth).padStart(2, '0')}-01`);
     const endDate = new Date(startDate);
-    endDate.setMonth(endDate.getMonth() + 1); // 다음 달의 첫 날
+    endDate.setMonth(endDate.getMonth() + 1);
 
-    // 예약 데이터와 선박 데이터 가져오기
-    const [reservations, ships] = await Promise.all([
-      Reservation.find({
-        $or: [
-          { departureDate: { $gte: startDate, $lt: endDate } },
-          { arrivalDate: { $gte: startDate, $lt: endDate } },
-        ],
-      })
-        .populate({ path: 'ship', select: '_id name' })
-        .sort({ departureDate: 1, arrivalDate: 1 }),
-      Ship.find(),
-    ]);
+    const reservations = await Reservation.find({
+      $or: [
+        { departureDate: { $gte: startDate, $lt: endDate } },
+        { arrivalDate: { $gte: startDate, $lt: endDate } },
+      ],
+    }).populate('ship', 'name');
 
-    // EJS에 변수 전달: 'data'로 예약 데이터를 전달
+    const ships = await Ship.find();
+
     res.render('monthly-reservations', {
       data: reservations.map((reservation) => ({
         ...reservation.toObject(),
-        ship: reservation.ship || null,
+        ship: reservation.ship ? reservation.ship : null,
       })),
-      selectedMonth: currentMonth, // 선택된 월
-      ships, // 선박 목록
+      ships,
+      selectedMonth: currentMonth,
     });
   } catch (error) {
-    console.error('Error fetching monthly reservations:', error.message);
-    res.status(500).send('Error fetching reservations.');
+    console.error('Error fetching reservations:', error.message);
+    res.status(500).send('Internal Server Error');
   }
 });
 
@@ -78,29 +72,19 @@ router.post('/add-bulk', async (req, res) => {
 // 예약 데이터 일괄 업데이트
 router.post('/bulk-update', async (req, res) => {
   try {
-    const updates = req.body.map((reservation) => {
-      const departureFee = reservation.departureFee || 0;
-      const arrivalFee = reservation.arrivalFee || 0;
-      const dokdoFee = reservation.dokdoFee || 0;
-      const restaurantFee = reservation.restaurantFee || 0;
-      const eventFee = reservation.eventFee || 0;
-      const otherFee = reservation.otherFee || 0;
-      const refund = reservation.refund || 0;
-
-      return {
-        ...reservation,
-        totalSettlement: departureFee + arrivalFee + dokdoFee + restaurantFee + eventFee + otherFee - refund,
-      };
-    });
+    const updates = req.body;
 
     for (const update of updates) {
       const { _id, ship, ...fieldsToUpdate } = update;
 
-      // ship 값이 올바른 경우에만 업데이트
+      // ship 값 검증 (null이 아닌 경우만 업데이트)
       if (ship && ship !== 'undefined') {
-        fieldsToUpdate.ship = ship;
-      } else {
-        console.warn(`Skipping ship update for ID ${_id}`);
+        const validShip = await Ship.findById(ship);
+        if (validShip) {
+          fieldsToUpdate.ship = ship; // 유효한 ship만 업데이트
+        } else {
+          console.warn(`Invalid ship ID for reservation ${_id}`);
+        }
       }
 
       await Reservation.findByIdAndUpdate(_id, { $set: fieldsToUpdate }, { new: true });
@@ -142,13 +126,23 @@ router.post('/add', async (req, res) => {
 // 예약 데이터 수정
 router.post('/update/:id', async (req, res) => {
   const { id } = req.params;
-  const updatedData = req.body;
+  const { ship, ...updatedData } = req.body;
 
   try {
     const reservation = await Reservation.findById(id);
     if (!reservation) return res.status(404).json({ success: false, message: 'Reservation not found' });
 
-    Object.assign(reservation, updatedData); // 데이터 업데이트
+    // ship 값 검증
+    if (ship && ship !== 'undefined') {
+      const validShip = await Ship.findById(ship);
+      if (validShip) {
+        updatedData.ship = validShip._id;
+      } else {
+        console.warn(`Invalid ship ID: ${ship}`);
+      }
+    }
+
+    Object.assign(reservation, updatedData);
     await reservation.save();
 
     res.json({ success: true });
@@ -160,11 +154,11 @@ router.post('/update/:id', async (req, res) => {
 
 // 예약 데이터 삭제
 router.delete('/delete/:id', async (req, res) => {
-  const { id } = req.params;
-
   try {
-    const reservation = await Reservation.findByIdAndDelete(id);
-    if (!reservation) return res.status(404).json({ success: false, message: 'Reservation not found' });
+    const deletedReservation = await Reservation.findByIdAndDelete(req.params.id);
+    if (!deletedReservation) {
+      return res.status(404).json({ success: false, message: 'Reservation not found' });
+    }
 
     res.json({ success: true });
   } catch (error) {
@@ -172,6 +166,7 @@ router.delete('/delete/:id', async (req, res) => {
     res.status(500).json({ success: false, message: 'Error deleting reservation' });
   }
 });
+
 
 // 엑셀 다운로드
 router.get('/export', async (req, res) => {
