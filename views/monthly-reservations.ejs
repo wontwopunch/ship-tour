@@ -250,14 +250,7 @@
         const inputElement = cell.querySelector('input, select');
         let value = inputElement ? inputElement.value : cell.innerText.trim();
 
-        // 숫자 필드 처리
-        const numericFields = [
-          'totalSeats', 'economySeats', 'businessSeats', 'firstSeats',
-          'totalPrice', 'deposit', 'balance', 'departureFee', 'arrivalFee',
-          'dokdoFee', 'restaurantFee', 'eventFee', 'otherFee', 'refund',
-          'totalSettlement', 'profit',
-        ];
-
+        const numericFields = ['totalSeats', 'economySeats', 'totalPrice', 'balance', 'refund'];
         if (numericFields.includes(fieldName)) {
           value = parseFloat(value.replace(/,/g, '')) || 0;
         }
@@ -265,16 +258,11 @@
         rowData[fieldName] = value;
       });
 
-      // 필수 필드 기본값 설정
-      rowData.ship = rowData.ship || null; // ship이 선택되지 않으면 null
-      rowData.reservedBy = rowData.reservedBy || 'Unknown';
-      rowData.contractDate = rowData.contractDate || new Date().toISOString().split('T')[0];
-
       if (id) {
-        rowData._id = id; // 기존 데이터 업데이트
+        rowData._id = id;
         updatedData.push(rowData);
       } else {
-        newData.push(rowData); // 새 데이터 추가
+        newData.push(rowData);
       }
     });
 
@@ -292,6 +280,18 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(newData),
+          })
+          .then((response) => response.json())
+          .then((result) => {
+            if (result.success) {
+              const addedReservations = result.data; // 서버로부터 반환된 새 예약 데이터
+              const rows = document.querySelectorAll('#reservationTable tbody tr[data-is-new="true"]');
+              rows.forEach((row, index) => {
+                const newId = addedReservations[index]._id;
+                row.setAttribute('data-id', newId); // _id 반영
+                row.removeAttribute('data-is-new'); // 새 행 표시 제거
+              });
+            }
           })
         : Promise.resolve(),
     ])

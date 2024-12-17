@@ -42,51 +42,23 @@ router.get('/monthly', async (req, res) => {
 
 router.post('/add-bulk', async (req, res) => {
   try {
-    const newReservations = req.body.map((reservation) => {
-      const defaultDate = new Date();
-      return {
-        ship: reservation.ship || null, // 필수 필드 기본값 설정
-        listStatus: reservation.listStatus || '',
-        contractDate: isValidDate(new Date(reservation.contractDate)) ? new Date(reservation.contractDate) : defaultDate,
-        departureDate: isValidDate(new Date(reservation.departureDate)) ? new Date(reservation.departureDate) : defaultDate,
-        arrivalDate: isValidDate(new Date(reservation.arrivalDate)) ? new Date(reservation.arrivalDate) : defaultDate,
-        reservedBy: reservation.reservedBy || 'Unknown',
-        reservedBy2: reservation.reservedBy2 || '',
-        contact: reservation.contact || 'Unknown',
-        product: reservation.product || '',
-        totalSeats: reservation.totalSeats || 0,
-        economySeats: reservation.economySeats || 0,
-        businessSeats: reservation.businessSeats || 0,
-        firstSeats: reservation.firstSeats || 0,
-        dokdoTourDate: isValidDate(new Date(reservation.dokdoTourDate)) ? new Date(reservation.dokdoTourDate) : null,
-        dokdoTourPeople: reservation.dokdoTourPeople || 0,
-        dokdoTourTime: reservation.dokdoTourTime || '',
-        dokdoTourDetails: reservation.dokdoTourDetails || '',
-        totalPrice: reservation.totalPrice || 0,
-        deposit: reservation.deposit || 0,
-        balance: reservation.balance || 0,
-        rentalCar: reservation.rentalCar || '',
-        accommodation: reservation.accommodation || '',
-        others: reservation.others || '',
-        departureFee: reservation.departureFee || 0,
-        arrivalFee: reservation.arrivalFee || 0,
-        dokdoFee: reservation.dokdoFee || 0,
-        restaurantFee: reservation.restaurantFee || 0,
-        eventFee: reservation.eventFee || 0,
-        otherFee: reservation.otherFee || 0,
-        refund: reservation.refund || 0,
-        totalSettlement: reservation.totalSettlement || 0,
-        profit: reservation.profit || 0,
-      };
-    });
+    const newReservations = req.body.map((reservation) => ({
+      ship: reservation.ship || null,
+      contractDate: reservation.contractDate || new Date(),
+      departureDate: reservation.departureDate || new Date(),
+      arrivalDate: reservation.arrivalDate || new Date(),
+      reservedBy: reservation.reservedBy || 'Unknown',
+      ...reservation,
+    }));
 
     const savedReservations = await Reservation.insertMany(newReservations);
-    res.json({ success: true, data: savedReservations });
+    res.json({ success: true, data: savedReservations }); // 추가된 예약 데이터 반환
   } catch (error) {
     console.error('Error during bulk addition:', error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 });
+
 
 
 
