@@ -42,45 +42,63 @@ router.get('/monthly', async (req, res) => {
 
 router.post('/add-bulk', async (req, res) => {
   try {
-    console.log('Received request body:', req.body); // 전체 데이터 출력
-
-    if (!req.body || !Array.isArray(req.body)) {
-      console.error('Invalid data format. Data must be an array.');
-      return res.status(400).json({ success: false, message: 'Invalid data format. Data must be an array.' });
-    }
-
-    const newReservations = req.body.map((reservation, index) => {
-      console.log(`Processing reservation #${index}:`, reservation);
-
-      if (!reservation.ship) {
-        console.error(`Reservation #${index} missing 'ship' field`);
-        throw new Error(`Reservation #${index}: 'ship' field is required.`);
-      }
-
-      // 날짜 검증 및 처리
+    console.log('Received data for bulk addition:', req.body); // 데이터 로깅
+    const newReservations = req.body.map((reservation) => {
+      // 필수 날짜 필드 처리
       const departureDate = new Date(reservation.departureDate);
       const contractDate = new Date(reservation.contractDate);
       const arrivalDate = new Date(reservation.arrivalDate);
+      const dokdoTourDate = reservation.dokdoTourDate ? new Date(reservation.dokdoTourDate) : null;
 
+      // 모든 필드를 명시적으로 매핑
       return {
-        ...reservation,
-        ship: mongoose.Types.ObjectId(reservation.ship), // ship 필드를 ObjectId로 변환
+        ship: reservation.ship || null,
+        listStatus: reservation.listStatus || '',
         contractDate: isValidDate(contractDate) ? contractDate : new Date(),
         departureDate: isValidDate(departureDate) ? departureDate : new Date(),
         arrivalDate: isValidDate(arrivalDate) ? arrivalDate : new Date(),
+        reservedBy: reservation.reservedBy || 'Unknown',
+        reservedBy2: reservation.reservedBy2 || '',
+        contact: reservation.contact || 'Unknown',
+        product: reservation.product || '',
+        totalSeats: reservation.totalSeats || 0,
+        economySeats: reservation.economySeats || 0,
+        businessSeats: reservation.businessSeats || 0,
+        firstSeats: reservation.firstSeats || 0,
+        dokdoTourDate: isValidDate(dokdoTourDate) ? dokdoTourDate : null,
+        dokdoTourPeople: reservation.dokdoTourPeople || 0,
+        dokdoTourTime: reservation.dokdoTourTime || '',
+        dokdoTourDetails: reservation.dokdoTourDetails || '',
+        totalPrice: reservation.totalPrice || 0,
+        deposit: reservation.deposit || 0,
+        balance: reservation.balance || 0,
+        rentalCar: reservation.rentalCar || '',
+        accommodation: reservation.accommodation || '',
+        others: reservation.others || '',
+        departureFee: reservation.departureFee || 0,
+        arrivalFee: reservation.arrivalFee || 0,
+        dokdoFee: reservation.dokdoFee || 0,
+        restaurantFee: reservation.restaurantFee || 0,
+        eventFee: reservation.eventFee || 0,
+        otherFee: reservation.otherFee || 0,
+        refund: reservation.refund || 0,
+        totalSettlement: reservation.totalSettlement || 0,
+        profit: reservation.profit || 0,
+        dailyBlocks: reservation.dailyBlocks || [], // 날짜별 블럭 좌석 정보
       };
     });
 
-    console.log('New Reservations to save:', newReservations); // 최종 저장할 데이터 출력
+    console.log('Mapped Reservations:', newReservations); // 변환된 데이터 확인
 
+    // 데이터베이스에 삽입
     const savedReservations = await Reservation.insertMany(newReservations, { ordered: false });
-    console.log('Successfully saved reservations:', savedReservations);
     res.json({ success: true, data: savedReservations });
   } catch (error) {
-    console.error('Error during bulk addition:', error.message, error.stack); // 전체 오류 출력
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Error during bulk addition:', error.message);
+    res.status(500).json({ success: false, message: 'Bulk addition failed.', error: error.message });
   }
 });
+
 
 
 // 예약 데이터 일괄 업데이트
